@@ -1,0 +1,21 @@
+{
+  "_comment": "Add this to your config/config.json to enable Santa's Countdown; every setting is also in the web UI.",
+  "santa-countdown": {
+    "enabled": true,
+    "display_duration": 15,
+    "scenes": [
+      "sleigh",
+      "elves",
+      "snowman",
+      "presents",
+      "gingerbread",
+      "workshop",
+      "lights",
+      "chimney"
+    ],
+    "order": "in_turn",
+    "season_start": "11-01",
+    "animation_fps": 6,
+    "vegas_animation_hz": 1
+  }
+}

@@ -9,24 +9,26 @@ made for kids. Every time it comes round it shows a different scene, and every s
 
 ## The scenes
 
-![Sleigh, snowman, presents, gingerbread, lights, chimney, elves, workshop](docs/scenes.png)
+They take turns in this order, so the two elf scenes never come one after the other.
+
+![Sleigh, elves, snowman, presents, gingerbread, workshop, lights, chimney](docs/scenes.png)
 
 | Scene | What moves |
 | --- | --- |
 | `sleigh` | Santa flies by with a teetering tower of presents in his sleigh and four reindeer. He waves, the tower wobbles, the legs gallop, the team bobs, and Rudolph's bright red nose glows. |
+| `elves` | The elves hop and toss presents, and one throws a present in a high arc across the whole card to the elf on the other side -- a new present, in a new colour, every throw. |
 | `snowman` | Snow falls and two snowmen wave. |
 | `presents` | Two trees with blinking ornaments and twinkling stars, and the presents take turns bouncing. |
 | `gingerbread` | Six gingerbread men dance, three on each side. |
+| `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
 | `lights` | Strings of bulbs chase along the top and bottom, the number flashes colours, and the words stretch the width of the card, every letter flashing. |
 | `chimney` | Santa is stuck in the chimney with his legs in the air, kicking in turn, while snow falls and the window flickers. |
-| `elves` | The elves hop and toss presents, and one throws a present in a high arc across the whole card to the elf on the other side -- a new present, in a new colour, every throw. |
-| `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
 
 Each one shows the days left (`47 DAYS TILL CHRISTMAS`), `1 DAY` on Christmas Eve and
 `MERRY CHRISTMAS!` on the day itself.
 
 Every picture here was drawn by the plugin's own code at 256 × 32 LEDs, one pixel per LED.
-There are no image files: all the art is in `santa_scenes.py`.
+The plugin loads no image files: all the art is code, in `santa_scenes.py`.
 
 ## Settings
 
@@ -58,14 +60,22 @@ rotation.
 ## Panel sizes
 
 Drawn for 32-row panels. On a 256-wide display everything fits. Narrower panels keep the main
-character and shrink the words: `47 DAYS` at 128, `47` alone at 64. A 64-row panel gets the same
-picture at double size.
+character and shrink the words: `47 DAYS` at 128, `47` alone at 64. Taller panels get the picture
+scaled up whole, as far as leaves at least 64 columns to draw in (128×64 doubles the 64-wide card;
+64×64 shows the 64-wide card centred).
 
 ## Install
 
 By URL, in the web interface's plugin manager (install from URL):
 `https://github.com/BigC07/ledmatrix-santa-countdown`. It is not in the Plugin Store yet. No API
 keys, no network, no extra packages.
+
+## Tested
+
+On a Raspberry Pi 4 driving four 64×32 panels (256×32) in Vegas scroll mode, in the rotation
+with sports, F1, a clock and weather cards, and on its own. LEDMatrix's safety harness
+(`scripts/check_plugin.py`) passes at 64×32, 128×32, 64×64, 96×48, 128×64, 256×32, 128×96 and
+256×128, and its Vegas live-element check passes too.
 
 ## License
 

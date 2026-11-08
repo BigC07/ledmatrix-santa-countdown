@@ -794,8 +794,10 @@ ELF_SCENES = frozenset({"elves", "workshop"})
 
 
 def render(name: str, days: int, phase: int, width: int, height: int = H) -> Image.Image:
-    """One frame of a scene, width x height. Taller panels get it scaled up whole."""
-    scale = max(1, height // H)
+    """One frame of a scene, width x height. Taller panels get it scaled up whole,
+    but never so far that fewer than 64 columns are left to draw in (a 64x64 panel
+    shows the 64-wide card, centred, rather than a cramped 32-wide one doubled)."""
+    scale = max(1, min(height // H, width // 64))
     img = SCENES[name](days, phase, max(1, width // scale))
     if scale > 1:
         img = img.resize((img.width * scale, H * scale), Image.NEAREST)

@@ -38,5 +38,8 @@
   "downloads": 0,
   "verified": false,
   "screenshot": "",
-  "config_schema": "config_schema.json"
+  "config_schema": "config_schema.json",
+  "compatible_versions": [
+    ">=2.0.0"
+  ]
 }
