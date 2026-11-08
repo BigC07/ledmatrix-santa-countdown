@@ -24,25 +24,25 @@
         "type": "string",
         "enum": [
           "sleigh",
+          "elves",
           "snowman",
           "presents",
           "gingerbread",
+          "workshop",
           "lights",
-          "chimney",
-          "elves",
-          "workshop"
+          "chimney"
         ]
       },
       "uniqueItems": true,
       "default": [
         "sleigh",
+        "elves",
         "snowman",
         "presents",
         "gingerbread",
+        "workshop",
         "lights",
-        "chimney",
-        "elves",
-        "workshop"
+        "chimney"
       ]
     },
     "order": {

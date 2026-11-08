@@ -18,7 +18,7 @@ First release.
 - The days left until Christmas in big digits, `1 DAY` on Christmas Eve and
   `MERRY CHRISTMAS!` on the day.
 - A different scene each time it comes round: in turn, or at random without
-  repeating the last one.
+  repeating the last one. The two elf scenes never come back to back.
 - Shows from `season_start` (1 November by default) through Christmas Day, and
   nothing the rest of the year.
 - Vegas scroll: one live element the ticker redraws in place, so the card

@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 
 from src.plugin_system.base_plugin import BasePlugin
 
-from santa_scenes import SCENES, render
+from santa_scenes import ELF_SCENES, SCENES, render
 
 try:  # core 3.8.0+
     from src.plugin_system.vegas_elements import VegasElement
@@ -127,6 +127,9 @@ class SantaCountdownPlugin(BasePlugin):
         self._turn += 1
         if self.order == "random" and len(self.scenes) > 1:
             choices = [s for s in self.scenes if s != self._scene]
+            if self._scene in ELF_SCENES:
+                # never one elf card straight after the other
+                choices = [s for s in choices if s not in ELF_SCENES] or choices
             self._scene = random.choice(choices)
         else:
             self._scene = self.scenes[self._turn % len(self.scenes)]

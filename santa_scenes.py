@@ -777,16 +777,20 @@ def scene_workshop(days: int, phase: int, width: int) -> Image.Image:
     return img
 
 
+# The order they take turns in. The two elf cards never come back to back,
+# including round the wrap from chimney to sleigh (the owner, 2026-11-08).
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "sleigh": scene_sleigh,
+    "elves": scene_elves,
     "snowman": scene_snowman,
     "presents": scene_presents,
     "gingerbread": scene_gingerbread,
+    "workshop": scene_workshop,
     "lights": scene_lights,
     "chimney": scene_chimney,
-    "elves": scene_elves,
-    "workshop": scene_workshop,
 }
+#: Scenes too alike to show one after the other.
+ELF_SCENES = frozenset({"elves", "workshop"})
 
 
 def render(name: str, days: int, phase: int, width: int, height: int = H) -> Image.Image:
