@@ -174,28 +174,43 @@ def sleigh(pose: int) -> Image.Image:
                 rows[y][SANTA_X + x] = ch
     return sprite(["".join(r) for r in rows])
 
+# A big snowman ("make the snowman bigger ... it's hard to see the hat", the
+# owner, 2026-11-08): 19 wide and 28 rows, nearly the card's height. The hat
+# was black -- an unlit LED, so it vanished; now grey with a lighter edge, a
+# red band and a sprig of holly. His eyes, smile and buttons stay black: on
+# white they read as coal.
 SNOWMAN = [
-    "....kkkkk....",
-    "....kkkkk....",
-    "...kkkkkkk...",
-    "....WWWWW....",
-    "...WkWWWkW...",
-    "...WWWOOOW...",
-    "....WWWWW....",
-    "...RRRRRRR...",
-    "....WWWRRW...",
-    "..WWWWkWWRW..",
-    "..WWWWWWWWW..",
-    "..WWWWkWWWW..",
-    "..WWWWWWWWW..",
-    "...WWWWWWW...",
-    "..WWWWWWWWW..",
-    ".WWWWWkWWWWW.",
-    ".WWWWWWWWWWW.",
-    ".WWWWWWWWWWW.",
-    "..WWWWWWWWW..",
-    "...WWWWWWW...",
+    "......hhhhhhH......",
+    "......hhhhhhH......",
+    "......hhhhhhH......",
+    "......RRRRRgr......",
+    "....hhhhhhhhhhH....",
+    ".....WWWWWWWWW.....",
+    "....WWWkWWWkWWW....",
+    "....WWWWWWWOOOO....",
+    "....WWWWWWWWWWW....",
+    ".....WWkWkWkWW.....",
+    "......WWWWWWW......",
+    "....RRRRRRRRRRR....",
+    ".....WWWWWWRRWW....",
+    "....WWWWWWWRRWWW...",
+    "...WWWWWWkWWWWWWW..",
+    "...WWWWWWWWWWWWWW..",
+    "...WWWWWWkWWWWWWW..",
+    "....WWWWWWWWWWWW...",
+    "..WWWWWWWWWWWWWWW..",
+    ".WWWWWWWWkWWWWWWWW.",
+    ".WWWWWWWWWWWWWWWWW.",
+    "WWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWkWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWW",
+    ".WWWWWWWWWWWWWWWWW.",
+    "..WWWWWWWWWWWWWWW..",
+    "....WWWWWWWWWWW....",
 ]
+SNOWMAN_HAT = {"h": (95, 95, 115), "H": (155, 155, 175), "g": PAL["G"], "r": RED}
+SNOWMAN_Y = 29 - len(SNOWMAN) + 1      # his base on row 29, the ground below
+
 
 GINGER_TOP = [
     "....LLLL....",
@@ -283,17 +298,20 @@ def reindeer(pose: int, rudolph: bool = False, glow: bool = False) -> Image.Imag
     return sprite(rows, {"N": RUDOLPH, "q": RUDOLPH_GLOW})
 
 
-def snowman(wave: int) -> Image.Image:
-    rows = list(SNOWMAN)
+def snowman(img: Image.Image, x: int, wave: int) -> None:
+    """The big snowman at x, his stick arms out from his middle: the left one
+    steady, the right one waving up and down a step at a time."""
+    paste(img, sprite(SNOWMAN, SNOWMAN_HAT), x, SNOWMAN_Y)
+    d = ImageDraw.Draw(img)
+    y = SNOWMAN_Y + 15
+    d.line([(x + 2, y), (x - 2, y - 3)], fill=PAL["B"])           # left arm
+    d.point([(x - 3, y - 5), (x - 3, y - 3)], fill=PAL["B"])
     if wave % 2:
-        rows[7] = "...RRRRRRR.B"     # right arm raised
-        rows[8] = "....WWWRRWB."
-        rows[10] = "B.WWWWWWWWW.."
-        rows[11] = ".BWWWWkWWWW.."
+        d.line([(x + 16, y), (x + 20, y - 5)], fill=PAL["B"])     # right arm up
+        d.point([(x + 21, y - 7), (x + 22, y - 5)], fill=PAL["B"])
     else:
-        rows[10] = "B.WWWWWWWWW.B"
-        rows[11] = ".BWWWWkWWWWB."
-    return sprite(rows)
+        d.line([(x + 16, y), (x + 20, y - 1)], fill=PAL["B"])     # right arm out
+        d.point([(x + 21, y - 3), (x + 22, y - 1)], fill=PAL["B"])
 
 
 def gingerbread(pose: int) -> Image.Image:
@@ -488,11 +506,10 @@ def scene_snowman(days: int, phase: int, width: int) -> Image.Image:
     words = Words(days, "SNOWY DAYS", "TILL CHRISTMAS")
     d = ImageDraw.Draw(img)
     d.rectangle([0, 30, width - 1, 31], fill=GROUND)
-    paste(img, snowman(phase), 4, 10)
-    right = 18
-    place_words(img, words, right, ((0, 200, 255), WHITE, (0, 200, 255)))
-    if width >= 192:
-        paste(img, snowman(phase + 1), width - 17, 10)
+    snowman(img, 5, phase)
+    right = place_words(img, words, 27, ((0, 200, 255), WHITE, (0, 200, 255)))
+    for sx in spare(img, right, 26):          # a second one waves back
+        snowman(img, sx + 4, phase + 1)
     snow(img, width // 4, 2, phase, floor=29)
     return img
 

@@ -13,6 +13,8 @@
   `time_format` (12h, the default, or 24h).
 - The star on every tree is a seven-wide gold star, steady, instead of a
   five-pixel plus that flashed white and gold and read as a cross.
+- The snowmen are bigger, nearly the card's height, and their hat shows: grey
+  with a red band and holly, where it was black (an unlit LED).
 
 ## [1.0.1] - 2026-11-08
 
