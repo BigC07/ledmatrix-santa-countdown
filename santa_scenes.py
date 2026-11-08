@@ -694,12 +694,12 @@ HAMMER_HEAD = (150, 150, 160)
 BUILT = ((PAL["R"], PAL["Y"]), (PAL["C"], WHITE), (PAL["G"], PAL["R"]), (PAL["P"], PAL["Y"]))
 
 
-def _build(d: ImageDraw.ImageDraw, x: int, phase: int) -> None:
-    """The present on the bench, x..x+11, its bottom on row 24, as far along as
+def _build(d: ImageDraw.ImageDraw, x: int, phase: int, w: int = 12) -> None:
+    """The present on the bench, x..x+w-1, its bottom on row 24, as far along as
     this step of the build."""
     k = phase % BUILD_STEPS
     box, rib = BUILT[(phase // BUILD_STEPS) % len(BUILT)]
-    w, full = 12, 9
+    full = 9
     h = (2, 5, full, full, full, full, full, full)[k]
     top = 25 - h
     d.rectangle([x, top, x + w - 1, 24], fill=box)
@@ -744,12 +744,14 @@ def scene_workshop(days: int, phase: int, width: int) -> Image.Image:
     words = Words(days, "DAYS LEFT", "TO MAKE TOYS!")
     d = ImageDraw.Draw(img)
     k = phase % BUILD_STEPS
-    # the bench
-    d.rectangle([13, 25, 46, 26], fill=WOOD)
+    # Below 96 columns only the hammering elf fits, at a short bench with a
+    # narrower box; from 96 the wrapping elf joins him.
+    narrow = width < 96
+    bench_right, box_x, box_w = (28, 20, 8) if narrow else (46, 24, 12)
+    d.rectangle([13, 25, bench_right, 26], fill=WOOD)
     d.rectangle([14, 27, 15, 31], fill=WOOD_DARK)
-    d.rectangle([44, 27, 45, 31], fill=WOOD_DARK)
-    box_x = 24
-    _build(d, box_x, phase)
+    d.rectangle([bench_right - 2, 27, bench_right - 1, 31], fill=WOOD_DARK)
+    _build(d, box_x, phase, box_w)
     # the hammering elf on the left: busy while the box goes together
     hammering = k < 4
     paste(img, elf(1 if (hammering and phase % 2) or k == 7 else 0), 1, 11 - (2 if k == 7 else 0))
@@ -760,12 +762,17 @@ def scene_workshop(days: int, phase: int, width: int) -> Image.Image:
     # and both hop when it is done
     wrapping = 4 <= k <= 6
     hop = 2 if k == 7 else 0
-    paste(img, elf(1 if wrapping or k == 7 else 0), 47, 11 - hop)
-    if wrapping:
-        # the ribbon runs from the wrapping elf's raised hand to the box
-        _, rib = BUILT[(phase // BUILD_STEPS) % len(BUILT)]
-        d.line([(47, 22), (box_x + 12, 18 + (phase % 2) * 2)], fill=rib)
-    right = place_words(img, words, 58, (PAL["G"], WHITE, GOLD))
+    if narrow:
+        # the number sits 2px after the bench (place_words adds 6): 64 columns
+        # hold the elf, the bench and "47"
+        right = place_words(img, words, bench_right - 3, (PAL["G"], WHITE, GOLD))
+    else:
+        paste(img, elf(1 if wrapping or k == 7 else 0), 47, 11 - hop)
+        if wrapping:
+            # the ribbon runs from the wrapping elf's raised hand to the box
+            _, rib = BUILT[(phase // BUILD_STEPS) % len(BUILT)]
+            d.line([(47, 22), (box_x + box_w, 18 + (phase % 2) * 2)], fill=rib)
+        right = place_words(img, words, 58, (PAL["G"], WHITE, GOLD))
     # finished presents piling up on the right, when there is room
     pile = spare(img, right, 18)
     if pile:
@@ -793,16 +800,57 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
 ELF_SCENES = frozenset({"elves", "workshop"})
 
 
+#: Each scene's sky, carried into the spare rows of a taller panel.
+SKY = {"sleigh": "stars", "elves": "snow", "snowman": "snow", "presents": "stars",
+       "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow"}
+
+
+def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot: int,
+              seed: int) -> None:
+    """Snow or stars in rows top..top+rows-1 of a taller panel, in `dot`-sized
+    squares to match a scaled card. Snow falls with the phase, stars twinkle,
+    at about the density the card itself has."""
+    if rows <= 0:
+        return
+    d = ImageDraw.Draw(img)
+    rnd = random.Random(seed)
+    cols, cells = max(1, img.width // dot), max(1, rows // dot)
+    count = max(1, cols * cells // (40 if kind == "snow" else 60))
+    for i in range(count):
+        cx, cy = rnd.randrange(cols), rnd.randrange(cells)
+        if kind == "snow":
+            cy = (cy + phase) % cells
+            colour = (220, 230, 255)
+        else:
+            v = (60, 120, 200)[(i + phase) % 3]
+            colour = (v, v, v)
+        x, y = cx * dot, top + cy * dot
+        d.rectangle([x, y, x + dot - 1, y + dot - 1], fill=colour)
+
+
 def render(name: str, days: int, phase: int, width: int, height: int = H) -> Image.Image:
     """One frame of a scene, width x height. Taller panels get it scaled up whole,
     but never so far that fewer than 64 columns are left to draw in (a 64x64 panel
-    shows the 64-wide card, centred, rather than a cramped 32-wide one doubled)."""
+    shows the 64-wide card, centred, rather than a cramped 32-wide one doubled).
+    Any rows left above and below the card get the scene's sky -- snow or stars --
+    so the panel is not a picture in a black frame (the owner, 2026-11-08: "it
+    doesn't look like it's at the top and bottom")."""
     scale = max(1, min(height // H, width // 64))
     img = SCENES[name](days, phase, max(1, width // scale))
     if scale > 1:
         img = img.resize((img.width * scale, H * scale), Image.NEAREST)
     if img.size != (width, height):
         canvas = Image.new("RGB", (width, height))
-        canvas.paste(img, (0, max(0, (height - img.height) // 2)))
+        top = max(0, (height - img.height) // 2)
+        canvas.paste(img, (0, top))
+        kind = SKY.get(name, "stars")
+        _band_sky(canvas, 0, top, kind, phase, scale, seed=11)
+        below = top + img.height
+        if name == "snowman" and below < height:
+            # the snowman's ground carries on down to the bottom of the panel
+            ImageDraw.Draw(canvas).rectangle([0, below, width - 1, height - 1],
+                                             fill=(235, 240, 255))
+        else:
+            _band_sky(canvas, below, height - below, kind, phase, scale, seed=12)
         img = canvas
     return img

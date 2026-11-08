@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1] - 2026-11-08
+
+- Taller panels: the rows above and below the card get the scene's sky,
+  falling snow or twinkling stars, instead of plain black; the snowman's ground
+  runs to the bottom of the panel.
+- A doubled card always keeps at least 64 columns: a 64x64 panel shows the
+  64-wide card, not a cramped 32-wide one.
+- The workshop fits narrow panels: one elf at a short bench below 96 columns,
+  both elves from 96.
+
 ## [1.0.0] - 2026-11-08
 
 First release.

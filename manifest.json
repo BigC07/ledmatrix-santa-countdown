@@ -1,7 +1,7 @@
 {
   "id": "santa-countdown",
   "name": "Santa's Countdown",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "BigC07",
   "class_name": "SantaCountdownPlugin",
   "entry_point": "manager.py",
@@ -26,6 +26,12 @@
   ],
   "vegas_participation": "scroll",
   "versions": [
+    {
+      "version": "1.0.1",
+      "released": "2026-11-08",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Taller panels: the rows above and below the card get the scene's sky -- falling snow or twinkling stars, in dots the size of the card's -- instead of plain black, and the snowman's ground runs to the bottom of the panel. A doubled card always keeps at least 64 columns, so a 64x64 panel shows the 64-wide card rather than a cramped 32-wide one. The workshop gets a narrow layout: below 96 columns one elf hammers at a short bench, from 96 both elves work."
+    },
     {
       "version": "1.0.0",
       "released": "2026-11-08",

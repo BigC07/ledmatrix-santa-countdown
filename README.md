@@ -1,6 +1,6 @@
 # Santa's Countdown
 
-**Version 1.0.0** (2026-11-08) · by [BigC07](https://github.com/BigC07) · [Changelog](CHANGELOG.md)
+**Version 1.0.1** (2026-11-08) · by [BigC07](https://github.com/BigC07) · [Changelog](CHANGELOG.md)
 
 An animated countdown to Christmas for [LEDMatrix](https://github.com/ChuckBuilds/LEDMatrix),
 made for kids. Every time it comes round it shows a different scene, and every scene moves.
@@ -63,6 +63,11 @@ Drawn for 32-row panels. On a 256-wide display everything fits. Narrower panels 
 character and shrink the words: `47 DAYS` at 128, `47` alone at 64. Taller panels get the picture
 scaled up whole, as far as leaves at least 64 columns to draw in (128×64 doubles the 64-wide card;
 64×64 shows the 64-wide card centred).
+
+![The same plugin at 64x32, 128x32, 64x64, 128x64 and 128x96](docs/panel-sizes.png)
+
+On a panel taller than the card, the rows above and below it carry on the scene's sky: falling
+snow or twinkling stars.
 
 ## Install
 
