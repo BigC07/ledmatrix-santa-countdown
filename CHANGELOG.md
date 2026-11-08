@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- A ninth scene, `loading`: elves load Santa's parked sleigh one present at a
+  time until the tower is full, then hop while it sparkles. It comes between
+  the snowman and the presents, so no two elf scenes are ever back to back.
+
 ## [1.0.1] - 2026-11-08
 
 - Taller panels: the rows above and below the card get the scene's sky,

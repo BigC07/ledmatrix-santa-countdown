@@ -29,6 +29,7 @@ PAL = {
 }
 BULBS = [PAL["R"], PAL["G"], PAL["Y"], PAL["C"], PAL["P"], PAL["O"]]
 WHITE, GOLD, GREEN, RED = (255, 255, 255), (255, 200, 0), (0, 200, 0), (255, 0, 0)
+GROUND = (235, 240, 255)   # snow on the ground: brighter than a falling flake, so the two never match
 
 # ── fonts ──────────────────────────────────────────────────────────────────
 _FONT_NAME = "PressStart2P-Regular.ttf"
@@ -138,22 +139,27 @@ TOWER = ((7, 5, PAL["G"], PAL["R"]), (6, 4, PAL["C"], WHITE), (7, 3, PAL["P"], P
          (5, 3, PAL["R"], WHITE), (6, 3, PAL["Y"], PAL["R"]), (4, 3, PAL["G"], WHITE))
 
 
-def present_tower(img: Image.Image, x: int, base: int, phase: int) -> None:
+def present_tower(img: Image.Image, x: int, base: int, phase: int,
+                  count: Optional[int] = None, lean: bool = True) -> None:
     """Presents stacked from row `base` up, in the back of the sleigh; the top
-    three boxes teeter a pixel or two to the side on alternate steps."""
+    three boxes teeter a pixel or two to the side on alternate steps. `count`
+    stacks only the first few (the sleigh being loaded); the bow goes on top
+    of a full tower."""
     d = ImageDraw.Draw(img)
+    boxes = TOWER if count is None else TOWER[:count]
     y = base
-    for i, (w, h, box, rib) in enumerate(TOWER):
-        lean = (0, 0, 0, 1, 1, 2)[i] if phase % 2 else 0
-        bx = x + (7 - w) // 2 + lean
+    for i, (w, h, box, rib) in enumerate(boxes):
+        tip = (0, 0, 0, 1, 1, 2)[i] if lean and phase % 2 else 0
+        bx = x + (7 - w) // 2 + tip
         top = y - h + 1
         d.rectangle([bx, top, bx + w - 1, y], fill=box)
         cx = bx + w // 2
         d.line([(cx, top), (cx, y)], fill=rib)
         d.line([(bx, top + h // 2), (bx + w - 1, top + h // 2)], fill=rib)
         y = top - 1
-    cx = x + 3 + (2 if phase % 2 else 0)
-    d.point([(cx - 1, y), (cx + 1, y), (cx, y)], fill=PAL["Y"])     # a bow on top
+    if len(boxes) == len(TOWER):
+        cx = x + 3 + (2 if lean and phase % 2 else 0)
+        d.point([(cx - 1, y), (cx + 1, y), (cx, y)], fill=PAL["Y"])     # a bow on top
 
 
 def sleigh(pose: int) -> Image.Image:
@@ -481,7 +487,7 @@ def scene_snowman(days: int, phase: int, width: int) -> Image.Image:
     img = Image.new("RGB", (width, H))
     words = Words(days, "SNOWY DAYS", "TILL CHRISTMAS")
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 30, width - 1, 31], fill=(235, 240, 255))    # the ground, not a snow colour
+    d.rectangle([0, 30, width - 1, 31], fill=GROUND)
     paste(img, snowman(phase), 4, 10)
     right = 18
     place_words(img, words, right, ((0, 200, 255), WHITE, (0, 200, 255)))
@@ -784,12 +790,109 @@ def scene_workshop(days: int, phase: int, width: int) -> Image.Image:
     return img
 
 
-# The order they take turns in. The two elf cards never come back to back,
-# including round the wrap from chimney to sleigh (the owner, 2026-11-08).
+# ── loading the sleigh: elves hand presents up into it, one at a time ─────
+#: Each present takes two steps (in the first elf's hands, then the second's),
+#: then two steps with the sleigh full: the elves hop and the tower sparkles.
+LOAD_STEPS = 2 * len(TOWER) + 2
+LOAD_RIM = 22      # the parked sleigh's rim row: its runners on row 29, the ground below
+
+
+def _box(d: ImageDraw.ImageDraw, x: int, bottom: int, w: int, h: int, box, rib) -> None:
+    top = bottom - h + 1
+    d.rectangle([x, top, x + w - 1, bottom], fill=box)
+    cx = x + w // 2
+    d.line([(cx, top), (cx, bottom)], fill=rib)
+    d.line([(x, top + h // 2), (x + w - 1, top + h // 2)], fill=rib)
+
+
+def _carry(img: Image.Image, ex: int, gift, high: bool) -> None:
+    """An elf standing at ex holding a present: low in front of him, or lifted
+    over his head in both arms. With no present, he just stands, hands down."""
+    d = ImageDraw.Draw(img)
+    if gift is None:
+        paste(img, elf(0), ex, 10)
+        return
+    w, h, box, rib = gift
+    bx = ex + 5 - w // 2
+    if high:
+        paste(img, elf(1), ex, 10)
+        _box(d, bx, 8, w, h, box, rib)
+        d.line([(ex, 20), (bx - 1, 9)], fill=PAL["G"])
+        d.line([(ex + 10, 20), (bx + w, 9)], fill=PAL["G"])
+        d.point([(bx - 1, 8), (bx + w, 8)], fill=PAL["S"])
+    else:
+        paste(img, elf(0), ex, 10)
+        _box(d, bx, 25, w, h, box, rib)
+
+
+def scene_loading(days: int, phase: int, width: int) -> Image.Image:
+    img = Image.new("RGB", (width, H))
+    words = Words(days, "DAYS", "TO LOAD UP!")
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 30, width - 1, 31], fill=GROUND)
+    n = len(TOWER)
+    k = phase % LOAD_STEPS
+    done = k >= 2 * n
+    loaded = n if done else k // 2
+    gift = None if done else TOWER[k // 2]
+    wide, narrow = width >= 192, width < 96
+    if narrow:
+        sx = 2                 # the sleigh alone; its tower still grows
+    else:
+        # the stack they load from, beside the left elf: the presents still to
+        # go, the next one on top. It goes down as the sleigh's tower goes up
+        # (the owner, 2026-11-08: "a stack of presents on the left ... and it
+        # goes down").
+        y = 29
+        for w, h, box, rib in reversed(TOWER[k // 2 + 1:] if not done else ()):
+            _box(d, 1 + (7 - w) // 2, y, w, h, box, rib)
+            y -= h
+        near = 21 if wide else 9                        # the elf by the sleigh
+        sx = near + 13
+        if done:
+            hop = k == 2 * n
+            for ex in ((9, near) if wide else (near,)):
+                paste(img, elf(1 if hop else 0), ex, 8 if hop else 10)
+        elif wide:
+            # the elf at the pile lifts each present up; the elf by the sleigh
+            # takes it over his head, and on the next step it is aboard
+            first = k % 2 == 0
+            _carry(img, 9, gift if first else None, True)
+            _carry(img, near, None if first else gift, True)
+        else:
+            _carry(img, near, gift, k % 2 == 1)
+    paste(img, sleigh(phase), sx, LOAD_RIM - SLEIGH_RIM)
+    present_tower(img, sx, LOAD_RIM - 1, 0, count=loaded, lean=False)
+    if done:   # all aboard: the tower sparkles
+        spots = ((sx - 2, 3), (sx + 8, 6), (sx - 3, 12), (sx + 9, 1)) if k % 2 == 0 else                 ((sx - 2, 7), (sx + 8, 2), (sx - 3, 1), (sx + 9, 10))
+        d.point(list(spots), fill=WHITE)
+    right = sx + 24
+    if wide:
+        # two reindeer waiting in harness, Rudolph in front, pawing the snow
+        rx = sx + 26
+        for i in range(2):
+            paste(img, reindeer(phase + i, i == 1, phase % 2 == 0), rx, 19)
+            rx += 17
+        d.line([(sx + 22, LOAD_RIM), (rx - 17 + 12, 26)], fill=PAL["y"])
+        right = rx
+    right = place_words(img, words, right, (PAL["R"], WHITE, GREEN))
+    pile = spare(img, right, 17)
+    if pile:               # more presents waiting their turn
+        px = pile[0]
+        _box(d, px, 29, 8, 7, PAL["R"], PAL["Y"])
+        _box(d, px + 9, 29, 8, 7, PAL["G"], WHITE)
+        _box(d, px + 5, 22, 7, 5, PAL["Y"], PAL["R"])
+    snow(img, width // 6, 9, phase, floor=29)
+    return img
+
+
+# The order they take turns in. No two elf cards come back to back, including
+# round the wrap from chimney to sleigh (the owner, 2026-11-08).
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "sleigh": scene_sleigh,
     "elves": scene_elves,
     "snowman": scene_snowman,
+    "loading": scene_loading,
     "presents": scene_presents,
     "gingerbread": scene_gingerbread,
     "workshop": scene_workshop,
@@ -797,12 +900,15 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "chimney": scene_chimney,
 }
 #: Scenes too alike to show one after the other.
-ELF_SCENES = frozenset({"elves", "workshop"})
+ELF_SCENES = frozenset({"elves", "loading", "workshop"})
 
 
 #: Each scene's sky, carried into the spare rows of a taller panel.
 SKY = {"sleigh": "stars", "elves": "snow", "snowman": "snow", "presents": "stars",
-       "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow"}
+       "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow",
+       "loading": "snow"}
+#: Scenes standing on snowy ground, which carries on below the card on a taller panel.
+GROUNDED = frozenset({"snowman", "loading"})
 
 
 def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot: int,
@@ -846,10 +952,9 @@ def render(name: str, days: int, phase: int, width: int, height: int = H) -> Ima
         kind = SKY.get(name, "stars")
         _band_sky(canvas, 0, top, kind, phase, scale, seed=11)
         below = top + img.height
-        if name == "snowman" and below < height:
-            # the snowman's ground carries on down to the bottom of the panel
-            ImageDraw.Draw(canvas).rectangle([0, below, width - 1, height - 1],
-                                             fill=(235, 240, 255))
+        if name in GROUNDED and below < height:
+            # the ground carries on down to the bottom of the panel
+            ImageDraw.Draw(canvas).rectangle([0, below, width - 1, height - 1], fill=GROUND)
         else:
             _band_sky(canvas, below, height - below, kind, phase, scale, seed=12)
         img = canvas

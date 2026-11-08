@@ -18,6 +18,7 @@ They take turns in this order, so the two elf scenes never come one after the ot
 | `sleigh` | Santa flies by with a teetering tower of presents in his sleigh and four reindeer. He waves, the tower wobbles, the legs gallop, the team bobs, and Rudolph's bright red nose glows. |
 | `elves` | The elves hop and toss presents, and one throws a present in a high arc across the whole card to the elf on the other side -- a new present, in a new colour, every throw. |
 | `snowman` | Snow falls and two snowmen wave. |
+| `loading` | Elves load Santa's parked sleigh: one lifts each present off the pile, the other hoists it over his head, and it lands on the growing tower in the back -- six presents, then the elves hop, the tower sparkles, and loading starts again. Two reindeer wait in harness. |
 | `presents` | Two trees with blinking ornaments and twinkling stars, and the presents take turns bouncing. |
 | `gingerbread` | Six gingerbread men dance, three on each side. |
 | `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
