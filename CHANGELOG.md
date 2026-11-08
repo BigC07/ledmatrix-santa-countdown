@@ -5,6 +5,9 @@
 - A ninth scene, `loading`: elves load Santa's parked sleigh one present at a
   time until the tower is full, then hop while it sparkles. It comes between
   the snowman and the presents, so no two elf scenes are ever back to back.
+- A tenth scene, `tree`: Santa hangs the low ornaments, an elf on a ladder
+  the high ones and the star, then the tree lights up. It comes between the
+  lights and the chimney.
 
 ## [1.0.1] - 2026-11-08
 

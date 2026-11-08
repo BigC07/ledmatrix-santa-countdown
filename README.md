@@ -23,6 +23,7 @@ They take turns in this order, so the two elf scenes never come one after the ot
 | `gingerbread` | Six gingerbread men dance, three on each side. |
 | `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
 | `lights` | Strings of bulbs chase along the top and bottom, the number flashes colours, and the words stretch the width of the card, every letter flashing. |
+| `tree` | Santa and an elf trim the tree: Santa walks along the bottom hanging ornaments, the elf on a ladder hangs the top ones and puts the star on top, then the ornaments flash, Santa waves and the elf cheers. |
 | `chimney` | Santa is stuck in the chimney with his legs in the air, kicking in turn, while snow falls and the window flickers. |
 
 Each one shows the days left (`47 DAYS TILL CHRISTMAS`), `1 DAY` on Christmas Eve and

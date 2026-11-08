@@ -886,6 +886,125 @@ def scene_loading(days: int, phase: int, width: int) -> Image.Image:
     return img
 
 
+# ── trimming the tree: Santa hangs the low ornaments, the elf on a step
+# ladder the high ones and the star ────────────────────────────────────────
+# Nobody has long arms (the owner, 2026-11-08, on the mock-up: "I do not
+# like the long arms of Santa and the elf"): Santa walks along the front of
+# the tree to each ornament, right to left so he never hides one he has hung,
+# and the tree is short enough for the elf on the ladder to reach the top.
+SANTA_STAND = [
+    "....W......",
+    "...RR......",
+    "..RRRR.....",
+    ".RRRRRR....",
+    ".WWWWWWW...",
+    ".SSSSkSS...",
+    ".SSSSSSS...",
+    "WWWWWWWWW..",
+    ".WWWWWWW...",
+    "RRWWWWWRR..",
+    "RRRRRRRRR..",
+    "RRRRRRRRR..",
+    "bbbbYbbbb..",
+    "RRRRRRRRR..",
+    "RRRRRRRRR..",
+    ".WWWWWWW...",
+    ".RRR.RRR...",
+    ".RRR.RRR...",
+    ".KKK.KKK...",
+]
+STAND_Y = 29 - len(SANTA_STAND) + 1      # boots on row 29, the ground below
+TRIM_TIERS = ((8, 4, 13), (11, 7, 19), (15, 10, 25))   # top, half width, bottom; top first
+#: Where each ornament hangs, from the tree's middle; 2x2 each.
+TRIM_SPOTS = ((0, 10), (1, 14), (-3, 16), (3, 18), (-6, 22), (0, 21), (5, 23), (-2, 24))
+#: Who hangs what, in order: Santa right to left along the bottom, then the
+#: elf the two at the top. (spot, "out" or "up" for Santa's arm, "elf")
+TRIM_ORDER = ((6, "out"), (3, "up"), (5, "out"), (7, "out"), (2, "up"), (4, "out"),
+              (1, "elf"), (0, "elf"))
+TRIM_STEPS = len(TRIM_ORDER) + 3          # the ornaments, the star, two steps lit up
+
+
+def _standing_santa(img: Image.Image, x: int, arm: str, hop: int = 0, reach: int = 0) -> None:
+    """Santa on his feet; his right arm "down", "out" to row `reach`, "up" a
+    little, or "wave" -- never longer than a few pixels."""
+    y = STAND_Y - hop
+    paste(img, sprite(SANTA_STAND, {"K": BOOT}), x, y)
+    d = ImageDraw.Draw(img)
+    sh = (x + 8, y + 10)
+    hand = {"down": (x + 9, y + 15), "out": (x + 10, reach or y + 10), "up": (x + 9, y + 6),
+            "wave": (x + 10, y + 5)}[arm]
+    d.line([sh, hand], fill=PAL["R"])
+    d.point([hand], fill=PAL["S"])
+
+
+def _trim_tree(d: ImageDraw.ImageDraw, cx: int, hung, star: bool, lit: Optional[int]) -> None:
+    d.rectangle([cx - 2, 26, cx + 2, 29], fill=PAL["B"])
+    for top, half, bottom in reversed(TRIM_TIERS):
+        d.polygon([(cx, top), (cx - half, bottom), (cx + half, bottom)], fill=PAL["G"])
+    for i in hung:
+        sx, sy = TRIM_SPOTS[i]
+        c = BULBS[(i + (lit or 0)) % len(BULBS)]
+        d.rectangle([cx + sx, sy, cx + sx + 1, sy + 1], fill=c)
+    if star:
+        c = WHITE if lit is not None and lit % 2 else PAL["Y"]
+        d.point([(cx, 5), (cx - 1, 6), (cx, 6), (cx + 1, 6), (cx, 7)], fill=c)
+
+
+def scene_tree(days: int, phase: int, width: int) -> Image.Image:
+    img = Image.new("RGB", (width, H))
+    words = Words(days, "DAYS", "TILL CHRISTMAS")
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 30, width - 1, 31], fill=GROUND)
+    k = phase % TRIM_STEPS
+    n = len(TRIM_ORDER)
+    hung = [i for i, _ in TRIM_ORDER[:min(k + 1, n)]]
+    star = k >= n
+    lit = k if k > n else None
+    if width < 96:
+        # the tree alone: ornaments, then the star, appear by themselves
+        cx = 12
+        _trim_tree(d, cx, hung, star, lit)
+        right = cx + 11
+    else:
+        cx = 22
+        _trim_tree(d, cx, hung, star, lit)
+        # the elf on a ladder just right of the tree, his hand at its top
+        ex = cx + 5
+        lx = ex + 2
+        d.line([(lx, 20), (lx, 29)], fill=WOOD)
+        d.line([(lx + 4, 20), (lx + 4, 29)], fill=WOOD)
+        for y in (20, 23, 26, 29):
+            d.line([(lx + 1, y), (lx + 3, y)], fill=WOOD)
+        last = cx + TRIM_SPOTS[TRIM_ORDER[5][0]][0] - 11     # where Santa ends up
+        reach = None                                         # the elf's hand
+        if k < n and TRIM_ORDER[k][1] != "elf":
+            spot, arm = TRIM_ORDER[k]
+            sx = cx + TRIM_SPOTS[spot][0] - (11 if arm == "out" else 10)
+            _standing_santa(img, sx, arm, reach=TRIM_SPOTS[spot][1])
+            paste(img, elf(0), ex, 0)                       # waiting, hands down
+        elif k < n:                                         # the elf hangs the top two
+            _standing_santa(img, last, "down")
+            paste(img, elf(1), ex, 0)
+            sx_, sy_ = TRIM_SPOTS[TRIM_ORDER[k][0]]
+            reach = (cx + sx_ + 2, sy_)
+        elif k == n:                                        # and puts the star on top
+            _standing_santa(img, last, "down")
+            paste(img, elf(1), ex, 0)
+            reach = (cx + 2, 7)
+        else:                                               # lit up: Santa waves, the elf cheers
+            _standing_santa(img, last, "wave", 2 if k % 2 else 0)
+            paste(img, elf(k % 2), ex, 0)
+        if reach:
+            d.line([(ex, 11), reach], fill=PAL["G"])
+            d.point([reach], fill=PAL["S"])
+        right = ex + 11
+    right = place_words(img, words, right, (GREEN, WHITE, PAL["R"]))
+    for tx in spare(img, right, 23, count=2):
+        _tree(img, tx, phase + 1)
+    snow(img, width // 7, 13, phase, floor=29)
+    return img
+
+
 # The order they take turns in. No two elf cards come back to back, including
 # round the wrap from chimney to sleigh (the owner, 2026-11-08).
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
@@ -897,18 +1016,19 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "gingerbread": scene_gingerbread,
     "workshop": scene_workshop,
     "lights": scene_lights,
+    "tree": scene_tree,
     "chimney": scene_chimney,
 }
 #: Scenes too alike to show one after the other.
-ELF_SCENES = frozenset({"elves", "loading", "workshop"})
+ELF_SCENES = frozenset({"elves", "loading", "workshop", "tree"})
 
 
 #: Each scene's sky, carried into the spare rows of a taller panel.
 SKY = {"sleigh": "stars", "elves": "snow", "snowman": "snow", "presents": "stars",
        "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow",
-       "loading": "snow"}
+       "loading": "snow", "tree": "snow"}
 #: Scenes standing on snowy ground, which carries on below the card on a taller panel.
-GROUNDED = frozenset({"snowman", "loading"})
+GROUNDED = frozenset({"snowman", "loading", "tree"})
 
 
 def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot: int,
