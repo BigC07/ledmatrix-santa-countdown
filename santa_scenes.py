@@ -497,15 +497,25 @@ def scene_snowman(days: int, phase: int, width: int) -> Image.Image:
     return img
 
 
+#: The star on top of every tree: seven wide, steady gold (the owner picked it,
+#: 2026-11-08, over the old five-pixel plus that read as a cross flashing
+#: white and gold). Drawn with its bottom two rows over the tree's tip.
+STAR = ["...Y...", "..YYY..", "YYYYYYY", ".YYYYY.", "..YYY..", ".YY.YY.", "YY...YY"]
+
+
+def tree_star(d: ImageDraw.ImageDraw, cx: int, top: int) -> None:
+    d.point([(cx - 3 + x, top + y) for y, row in enumerate(STAR)
+             for x, ch in enumerate(row) if ch == "Y"], fill=PAL["Y"])
+
+
 def _tree(img: Image.Image, x: int, phase: int) -> int:
-    """A tree with blinking ornaments and a twinkling star; returns its right edge."""
+    """A tree with blinking ornaments and a star on top; returns its right edge."""
     d = ImageDraw.Draw(img)
     cx = x + 11
     for top, half, bottom in ((4, 5, 11), (8, 8, 18), (13, 11, 27)):
         d.polygon([(cx, top), (cx - half, bottom), (cx + half, bottom)], fill=PAL["G"])
     d.rectangle([cx - 2, 28, cx + 2, 31], fill=PAL["B"])
-    star = PAL["Y"] if phase % 2 == 0 else WHITE
-    d.point([(cx, 1), (cx - 1, 2), (cx, 2), (cx + 1, 2), (cx, 3)], fill=star)
+    tree_star(d, cx, -1)              # its top point just off the card; the tip at row 4
     spots = [(cx - 1, 8), (cx + 2, 12), (cx - 4, 15), (cx + 4, 17), (cx - 6, 22),
              (cx + 1, 21), (cx + 7, 24), (cx - 2, 25)]
     for i, (sx, sy) in enumerate(spots):
@@ -946,8 +956,7 @@ def _trim_tree(d: ImageDraw.ImageDraw, cx: int, hung, star: bool, lit: Optional[
         c = BULBS[(i + (lit or 0)) % len(BULBS)]
         d.rectangle([cx + sx, sy, cx + sx + 1, sy + 1], fill=c)
     if star:
-        c = WHITE if lit is not None and lit % 2 else PAL["Y"]
-        d.point([(cx, 5), (cx - 1, 6), (cx, 6), (cx + 1, 6), (cx, 7)], fill=c)
+        tree_star(d, cx, 3)           # rows 3-9, over the tip at row 8
 
 
 def scene_tree(days: int, phase: int, width: int) -> Image.Image:
@@ -990,7 +999,7 @@ def scene_tree(days: int, phase: int, width: int) -> Image.Image:
         elif k == n:                                        # and puts the star on top
             _standing_santa(img, last, "down")
             paste(img, elf(1), ex, 0)
-            reach = (cx + 2, 7)
+            reach = (cx + 4, 6)
         else:                                               # lit up: Santa waves, the elf cheers
             _standing_santa(img, last, "wave", 2 if k % 2 else 0)
             paste(img, elf(k % 2), ex, 0)
@@ -1005,6 +1014,89 @@ def scene_tree(days: int, phase: int, width: int) -> Image.Image:
     return img
 
 
+# ── the clock: the time in candy-cane stripes ─────────────────────────────
+#: The time the clock card shows when no time is passed in (tests, previews):
+#: 4:32:15 PM, a second later every step, so a frame is still a pure function
+#: of its arguments. The plugin always passes the real time.
+DEMO_TIME = (16, 32, 15)
+CANE = ["..WRW.", ".R...W", ".W...R", ".....W", ".....R", ".....W", ".....R", ".....W",
+        ".....R", ".....W", ".....R", ".....W", ".....R", ".....W"]
+
+
+def candy_cane(img: Image.Image, x: int, y: int, phase: int) -> None:
+    """A candy cane whose stripes swap every step."""
+    rows = CANE if phase % 2 == 0 else \
+        [r.replace("W", "x").replace("R", "W").replace("x", "R") for r in CANE]
+    paste(img, sprite(rows), x, y)
+
+
+def candy_text(img: Image.Image, xy, s: str, size: int, phase: int) -> None:
+    """Text filled with red and white diagonal stripes that roll along a step
+    at a time."""
+    mask = Image.new("L", img.size)
+    md = ImageDraw.Draw(mask)
+    md.fontmode = "1"
+    md.text(xy, s, font=font(size), fill=255)
+    box = mask.getbbox()
+    if not box:
+        return
+    stripes = Image.new("RGB", img.size)
+    px = stripes.load()
+    for y in range(box[1], box[3]):
+        for x in range(box[0], box[2]):
+            px[x, y] = PAL["R"] if ((x + y + phase * 2) // 3) % 2 else WHITE
+    img.paste(stripes, (0, 0), mask)
+
+
+def scene_clock(days: int, phase: int, width: int, now=None, hour24: bool = False) -> Image.Image:
+    """The time, ticking every second, in candy-cane stripes that roll along;
+    the date and the days to go underneath; candy canes either side."""
+    img = Image.new("RGB", (width, H))
+    d = _draw(img)
+    if now is None:
+        from datetime import datetime, timedelta
+        now = datetime(2026, 11, 8, *DEMO_TIME) + timedelta(seconds=phase)
+    hour = now.hour if hour24 else (now.hour % 12) or 12
+    hm, ss = ("%02d:%02d" if hour24 else "%d:%02d") % (hour, now.minute), ":%02d" % now.second
+    ap = "" if hour24 else ("AM" if now.hour < 12 else "PM")
+    date = now.strftime("%a").upper() + " " + now.strftime("%m/%d/%y")
+    togo = "MERRY CHRISTMAS!" if days <= 0 else ("1 DAY TO GO" if days == 1 else "%d DAYS TO GO" % days)
+    if width >= 192:
+        x = 14
+        candy_cane(img, 2, 9, phase)
+        candy_text(img, (x, 4), hm + ss, 16, phase)
+        x += text_width(hm + ss, 16) + 4
+        if ap:
+            d.text((x, 4), ap, font=font(8), fill=GOLD)
+        d.text((14, 23), date, font=font(8), fill=GREEN)
+        tx = 14 + text_width(date, 8) + 8
+        if tx + text_width(togo, 8) <= width - 1:
+            d.text((tx, 23), togo, font=font(8), fill=PAL["R"])
+        # a row of candy canes in the space after the time
+        for i, cx in enumerate(range(x + (22 if ap else 4), width - 7, 14)):
+            candy_cane(img, cx, 9, phase + i + 1)
+    elif width >= 96:
+        x = 4
+        candy_text(img, (x, 4), hm, 16, phase)
+        x += text_width(hm, 16) + 2
+        if ap:
+            d.text((x, 4), ap, font=font(8), fill=GOLD)
+        candy_text(img, (x, 12), ss, 8, phase)
+        right = x + text_width(ss, 8)
+        d.text((4, 23), now.strftime("%m/%d/%y"), font=font(8), fill=GREEN)
+        if right + 10 <= width:
+            candy_cane(img, width - 8, 9, phase)
+    else:
+        # 64 columns: the whole time on one line in the small font
+        candy_text(img, (0, 6), hm + ss, 8, phase)
+        if ap:
+            d.text((0, 16), ap, font=font(8), fill=GOLD)
+        d.text((max(0, width - text_width(now.strftime("%m/%d"), 8)), 16),
+               now.strftime("%m/%d"), font=font(8), fill=GREEN)
+    snow(img, width // 12, 23, phase)
+    return img
+
+
 # The order they take turns in. No two elf cards come back to back, including
 # round the wrap from chimney to sleigh (the owner, 2026-11-08).
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
@@ -1014,6 +1106,7 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "loading": scene_loading,
     "presents": scene_presents,
     "gingerbread": scene_gingerbread,
+    "clock": scene_clock,
     "workshop": scene_workshop,
     "lights": scene_lights,
     "tree": scene_tree,
@@ -1026,7 +1119,7 @@ ELF_SCENES = frozenset({"elves", "loading", "workshop", "tree"})
 #: Each scene's sky, carried into the spare rows of a taller panel.
 SKY = {"sleigh": "stars", "elves": "snow", "snowman": "snow", "presents": "stars",
        "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow",
-       "loading": "snow", "tree": "snow"}
+       "loading": "snow", "tree": "snow", "clock": "snow"}
 #: Scenes standing on snowy ground, which carries on below the card on a taller panel.
 GROUNDED = frozenset({"snowman", "loading", "tree"})
 
@@ -1054,7 +1147,12 @@ def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot:
         d.rectangle([x, y, x + dot - 1, y + dot - 1], fill=colour)
 
 
-def render(name: str, days: int, phase: int, width: int, height: int = H) -> Image.Image:
+#: Scenes that show the time: render() passes them `now` and `hour24`.
+TIMED = frozenset({"clock"})
+
+
+def render(name: str, days: int, phase: int, width: int, height: int = H,
+           now=None, hour24: bool = False) -> Image.Image:
     """One frame of a scene, width x height. Taller panels get it scaled up whole,
     but never so far that fewer than 64 columns are left to draw in (a 64x64 panel
     shows the 64-wide card, centred, rather than a cramped 32-wide one doubled).
@@ -1062,7 +1160,8 @@ def render(name: str, days: int, phase: int, width: int, height: int = H) -> Ima
     so the panel is not a picture in a black frame (the owner, 2026-11-08: "it
     doesn't look like it's at the top and bottom")."""
     scale = max(1, min(height // H, width // 64))
-    img = SCENES[name](days, phase, max(1, width // scale))
+    w = max(1, width // scale)
+    img = SCENES[name](days, phase, w, now, hour24) if name in TIMED else SCENES[name](days, phase, w)
     if scale > 1:
         img = img.resize((img.width * scale, H * scale), Image.NEAREST)
     if img.size != (width, height):

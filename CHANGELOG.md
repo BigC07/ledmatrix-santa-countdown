@@ -8,6 +8,11 @@
 - A tenth scene, `tree`: Santa hangs the low ornaments, an elf on a ladder
   the high ones and the star, then the tree lights up. It comes between the
   lights and the chimney.
+- An eleventh scene, `clock`: the time in rolling candy-cane stripes, ticking
+  every second while it scrolls, with the date and the days to go. New setting
+  `time_format` (12h, the default, or 24h).
+- The star on every tree is a seven-wide gold star, steady, instead of a
+  five-pixel plus that flashed white and gold and read as a cross.
 
 ## [1.0.1] - 2026-11-08
 

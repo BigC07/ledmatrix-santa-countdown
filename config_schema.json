@@ -29,6 +29,7 @@
           "loading",
           "presents",
           "gingerbread",
+          "clock",
           "workshop",
           "lights",
           "tree",
@@ -43,6 +44,7 @@
         "loading",
         "presents",
         "gingerbread",
+        "clock",
         "workshop",
         "lights",
         "tree",
@@ -58,6 +60,16 @@
       ],
       "default": "in_turn",
       "description": "in_turn shows the scenes one after another; random picks a different one each time"
+    },
+    "time_format": {
+      "type": "string",
+      "title": "Clock",
+      "enum": [
+        "12h",
+        "24h"
+      ],
+      "default": "12h",
+      "description": "12-hour (4:32:15 PM) or 24-hour (16:32:15) time on the clock scene"
     },
     "season_start": {
       "type": "string",

@@ -3,8 +3,9 @@ Santa's Countdown for LEDMatrix
 
 An animated countdown to Christmas for kids: Santa's sleigh and reindeer,
 a waving snowman, bouncing presents, dancing gingerbread men, chasing
-lights, Santa kicking his legs in a chimney, elves throwing presents and
-elves building one in their workshop. A different scene each time
+lights, Santa kicking his legs in a chimney, elves throwing presents,
+building one in their workshop and loading the sleigh, Santa and an elf
+trimming the tree, and a candy-cane clock. A different scene each time
 the plugin comes round.
 
 - Normal rotation: display() is called repeatedly and animates at
@@ -25,7 +26,7 @@ from typing import Any, Dict, List, Optional
 
 from src.plugin_system.base_plugin import BasePlugin
 
-from santa_scenes import ELF_SCENES, SCENES, render
+from santa_scenes import ELF_SCENES, SCENES, TIMED, render
 
 try:  # core 3.8.0+
     from src.plugin_system.vegas_elements import VegasElement
@@ -80,6 +81,7 @@ class SantaCountdownPlugin(BasePlugin):
             self.vegas_hz = max(0.2, min(30.0, float(config.get("vegas_animation_hz", 1))))
         except (TypeError, ValueError):
             self.vegas_hz = 1.0
+        self.hour24 = config.get("time_format", "12h") == "24h"
 
     def on_config_change(self, new_config: Dict[str, Any]) -> None:
         super().on_config_change(new_config)
@@ -87,8 +89,10 @@ class SantaCountdownPlugin(BasePlugin):
         if self._scene not in self.scenes:
             self._scene = self.scenes[0]
 
-    # ── the date ──────────────────────────────────────────────────────────
-    def _today(self) -> date:
+    # ── the date and time ─────────────────────────────────────────────────
+    def _now(self) -> datetime:
+        """The wall's local time (the core's timezone setting), for the date
+        and the clock card."""
         tz_name = None
         for owner in (self.plugin_manager, self.cache_manager):
             cm = getattr(owner, "config_manager", None)
@@ -101,10 +105,18 @@ class SantaCountdownPlugin(BasePlugin):
         if tz_name:
             try:
                 from zoneinfo import ZoneInfo
-                return datetime.now(ZoneInfo(tz_name)).date()
+                return datetime.now(ZoneInfo(tz_name))
             except Exception:  # pylint: disable=broad-except
                 pass
-        return date.today()
+        return datetime.now()
+
+    def _today(self) -> date:
+        return self._now().date()
+
+    def _frame(self, scene: str, days: int, phase: int, width: int, height: int):
+        if scene in TIMED:
+            return render(scene, days, phase, width, height, now=self._now(), hour24=self.hour24)
+        return render(scene, days, phase, width, height)
 
     def _days_until_christmas(self) -> int:
         today = self._today()
@@ -149,8 +161,8 @@ class SantaCountdownPlugin(BasePlugin):
             dm.clear()
             dm.update_display()
             return
-        frame = render(self._scene, self._days_until_christmas(),
-                       self._phase(now, self.fps), dm.width, dm.height)
+        frame = self._frame(self._scene, self._days_until_christmas(),
+                            self._phase(now, self.fps), dm.width, dm.height)
         dm.image.paste(frame, (0, 0))
         dm.update_display()
 
@@ -168,7 +180,7 @@ class SantaCountdownPlugin(BasePlugin):
             self.logger.debug("Vegas turn %d: %s", self._turn, self._scene)
 
     def _vegas_frame(self, scene: str, at: float, width: int, height: int):
-        return render(scene, self.days, self._phase(at, self.vegas_hz), width, height)
+        return self._frame(scene, self.days, self._phase(at, self.vegas_hz), width, height)
 
     def get_vegas_elements(self) -> Optional[List[Any]]:
         if VegasElement is None:
