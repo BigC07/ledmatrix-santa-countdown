@@ -4,8 +4,8 @@
 
 First release.
 
-- Eight animated scenes, all drawn in code: Santa's sleigh and four reindeer
-  (Rudolph's nose glows, the legs gallop), two waving snowmen in falling
+- Eight animated scenes, all drawn in code: Santa waving from a sleigh full
+  of presents behind four reindeer (Rudolph's nose glows, the legs gallop), two waving snowmen in falling
   snow, trees with blinking ornaments and bouncing presents, six dancing
   gingerbread men, strings of chasing lights top and bottom with flashing
   letters, Santa stuck in a chimney kicking his legs, elves who throw a

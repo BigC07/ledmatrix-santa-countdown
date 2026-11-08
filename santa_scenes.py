@@ -98,13 +98,13 @@ DEER_LEGS = (
 
 SLEIGH = [
     "..........W.............",
-    ".........RR.............",
-    "........RRR.............",
-    ".......WWWWW............",
-    ".BBB...SSkSS............",
-    "BBBBB..WWWWW............",
-    "BBBBB...WWW.............",
-    "YBBBBRRRRRRRR.........Y.",
+    "..CWC....RR.............",
+    "..WWW...RRR.............",
+    "..CWC..WWWWW............",
+    "GGRGG..SSkSS............",
+    "RRRRRPPWWWWW............",
+    "GGRGGPPPWWW.............",
+    "YGGRGGPPRRRRR.........Y.",
     "YYYYYYYYYYYYYYYYYYYYYYY.",
     "RRRRRRRRRRRRRRRRRRRRRR..",
     ".RRRRRRRRRRRRRRRRRRRR...",
@@ -113,6 +113,19 @@ SLEIGH = [
     "YYYYYYYYYYYYYYYYYYYYYYY.",
     ".......................Y",
 ]
+# Santa's waving arm, (x, y, char) over SLEIGH: up, with the hand swinging
+# in, then out. Presents ride in the back where the sack was (2026-11-08).
+SANTA_WAVE = (
+    [(12, 6, "R"), (13, 5, "R"), (13, 4, "R"), (13, 3, "S")],
+    [(12, 6, "R"), (13, 5, "R"), (14, 4, "R"), (15, 3, "S")],
+)
+
+
+def sleigh(pose: int) -> Image.Image:
+    rows = [list(r) for r in SLEIGH]
+    for x, y, ch in SANTA_WAVE[pose % 2]:
+        rows[y][x] = ch
+    return sprite(["".join(r) for r in rows])
 
 SNOWMAN = [
     "....kkkkk....",
@@ -399,7 +412,7 @@ def scene_sleigh(days: int, phase: int, width: int) -> Image.Image:
     team = 4 if width >= 192 else (1 if width >= 96 else 0)
     x = 2
     sleigh_y = 15 + (phase % 2)
-    paste(img, sprite(SLEIGH), x, sleigh_y)
+    paste(img, sleigh(phase), x, sleigh_y)
     right = x + 24
     if team:
         dx = x + 26
