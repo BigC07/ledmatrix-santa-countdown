@@ -98,13 +98,13 @@ DEER_LEGS = (
 
 SLEIGH = [
     "..........W.............",
-    "..CWC....RR.............",
-    "..WWW...RRR.............",
-    "..CWC..WWWWW............",
-    "GGRGG..SSkSS............",
-    "RRRRRPPWWWWW............",
-    "GGRGGPPPWWW.............",
-    "YGGRGGPPRRRRR.........Y.",
+    ".........RR.............",
+    "........RRR.............",
+    ".......WWWWW............",
+    ".......SSkSS............",
+    ".......WWWWW............",
+    "........WWW.............",
+    "Y.......RRRRR.........Y.",
     "YYYYYYYYYYYYYYYYYYYYYYY.",
     "RRRRRRRRRRRRRRRRRRRRRR..",
     ".RRRRRRRRRRRRRRRRRRRR...",
@@ -114,11 +114,35 @@ SLEIGH = [
     ".......................Y",
 ]
 # Santa's waving arm, (x, y, char) over SLEIGH: up, with the hand swinging
-# in, then out. Presents ride in the back where the sack was (2026-11-08).
+# in, then out. A tower of presents rides in the back (2026-11-08: "make the
+# presents extreme, make them really tall").
 SANTA_WAVE = (
     [(12, 6, "R"), (13, 5, "R"), (13, 4, "R"), (13, 3, "S")],
     [(12, 6, "R"), (13, 5, "R"), (14, 4, "R"), (15, 3, "S")],
 )
+
+
+# The tower, bottom to top: (width, height, box, ribbon). 21 rows of presents.
+TOWER = ((7, 5, PAL["G"], PAL["R"]), (6, 4, PAL["C"], WHITE), (7, 3, PAL["P"], PAL["Y"]),
+         (5, 3, PAL["R"], WHITE), (6, 3, PAL["Y"], PAL["R"]), (4, 3, PAL["G"], WHITE))
+
+
+def present_tower(img: Image.Image, x: int, base: int, phase: int) -> None:
+    """Presents stacked from row `base` up, in the back of the sleigh; the top
+    three boxes teeter a pixel or two to the side on alternate steps."""
+    d = ImageDraw.Draw(img)
+    y = base
+    for i, (w, h, box, rib) in enumerate(TOWER):
+        lean = (0, 0, 0, 1, 1, 2)[i] if phase % 2 else 0
+        bx = x + (7 - w) // 2 + lean
+        top = y - h + 1
+        d.rectangle([bx, top, bx + w - 1, y], fill=box)
+        cx = bx + w // 2
+        d.line([(cx, top), (cx, y)], fill=rib)
+        d.line([(bx, top + h // 2), (bx + w - 1, top + h // 2)], fill=rib)
+        y = top - 1
+    cx = x + 3 + (2 if phase % 2 else 0)
+    d.point([(cx - 1, y), (cx + 1, y), (cx, y)], fill=PAL["Y"])     # a bow on top
 
 
 def sleigh(pose: int) -> Image.Image:
@@ -413,6 +437,7 @@ def scene_sleigh(days: int, phase: int, width: int) -> Image.Image:
     x = 2
     sleigh_y = 15 + (phase % 2)
     paste(img, sleigh(phase), x, sleigh_y)
+    present_tower(img, x, sleigh_y + 6, phase)
     right = x + 24
     if team:
         dx = x + 26

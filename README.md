@@ -13,7 +13,7 @@ made for kids. Every time it comes round it shows a different scene, and every s
 
 | Scene | What moves |
 | --- | --- |
-| `sleigh` | Santa flies by with a sleigh full of presents and four reindeer. He waves, the legs gallop, the team bobs, and Rudolph's bright red nose glows. |
+| `sleigh` | Santa flies by with a teetering tower of presents in his sleigh and four reindeer. He waves, the tower wobbles, the legs gallop, the team bobs, and Rudolph's bright red nose glows. |
 | `snowman` | Snow falls and two snowmen wave. |
 | `presents` | Two trees with blinking ornaments and twinkling stars, and the presents take turns bouncing. |
 | `gingerbread` | Six gingerbread men dance, three on each side. |
