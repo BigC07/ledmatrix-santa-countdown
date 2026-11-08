@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Santa's Countdown",
+  "description": "An animated countdown to Christmas: a different scene each time it comes round.",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show Santa's Countdown"
+    },
+    "display_duration": {
+      "type": "number",
+      "default": 15,
+      "minimum": 3,
+      "maximum": 300,
+      "description": "Seconds to show it in normal rotation"
+    },
+    "scenes": {
+      "type": "array",
+      "title": "Scenes",
+      "description": "Which scenes to show. They take turns; leave all ticked for the full set.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "sleigh",
+          "snowman",
+          "presents",
+          "gingerbread",
+          "lights",
+          "chimney",
+          "elves"
+        ]
+      },
+      "uniqueItems": true,
+      "default": [
+        "sleigh",
+        "snowman",
+        "presents",
+        "gingerbread",
+        "lights",
+        "chimney",
+        "elves"
+      ]
+    },
+    "order": {
+      "type": "string",
+      "title": "Order",
+      "enum": [
+        "in_turn",
+        "random"
+      ],
+      "default": "in_turn",
+      "description": "in_turn shows the scenes one after another; random picks a different one each time"
+    },
+    "season_start": {
+      "type": "string",
+      "title": "Season starts",
+      "pattern": "^(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])$",
+      "default": "11-01",
+      "description": "Month-day to start showing (e.g. 11-01 or 12-01). It stays up through Christmas Day and is off the rest of the year."
+    },
+    "animation_fps": {
+      "type": "number",
+      "default": 6,
+      "minimum": 1,
+      "maximum": 30,
+      "description": "Animation steps per second in normal rotation",
+      "x-advanced": true
+    },
+    "vegas_animation_hz": {
+      "type": "number",
+      "default": 1,
+      "minimum": 0.2,
+      "maximum": 30,
+      "description": "Animation steps per second while it scrolls in Vegas mode. The ticker caps this (1 per second with the stock rgbmatrix binding); match it to that cap so each redraw is a new step.",
+      "x-advanced": true
+    }
+  },
+  "required": [
+    "enabled"
+  ],
+  "additionalProperties": false
+}
