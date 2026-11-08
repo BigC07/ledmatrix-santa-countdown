@@ -284,12 +284,15 @@ def elf(pose: int) -> Image.Image:
 
 
 RUDOLPH = (255, 0, 0)          # full red, always lit: a dim blink step vanished on the panel
-RUDOLPH_GLOW = (255, 110, 90)
+#: The blink grows the nose from 2 to 4 pixels, all the same red. The glow was
+#: a pale (255, 110, 90), which the owner's photo showed as yellow on the nose
+#: (2026-11-08); any lighter red tips toward yellow on these LEDs.
+RUDOLPH_GLOW = RUDOLPH
 
 
 def reindeer(pose: int, rudolph: bool = False, glow: bool = False) -> Image.Image:
-    """A reindeer; Rudolph has a 2-pixel nose that is always lit, with a glow
-    above and below it that blinks."""
+    """A reindeer; Rudolph has a 2-pixel red nose that is always lit and grows
+    a pixel above and below on alternate steps."""
     rows = _DEER_TOP + DEER_LEGS[pose % 2]
     if not rudolph:
         return sprite([r.replace("N", "k").replace("q", ".") for r in rows])

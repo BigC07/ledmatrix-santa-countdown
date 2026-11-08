@@ -15,6 +15,8 @@
   five-pixel plus that flashed white and gold and read as a cross.
 - The snowmen are bigger, nearly the card's height, and their hat shows: grey
   with a red band and holly, where it was black (an unlit LED).
+- Rudolph's nose is red and only red: its blink grows it from two pixels to
+  four instead of adding a pale glow that showed as yellow on the panel.
 
 ## [1.0.1] - 2026-11-08
 
