@@ -3,7 +3,8 @@ Santa's Countdown for LEDMatrix
 
 An animated countdown to Christmas for kids: Santa's sleigh and reindeer,
 a waving snowman, bouncing presents, dancing gingerbread men, chasing
-lights, Santa's boots kicking in a chimney and elves tossing presents. A different scene each time
+lights, Santa kicking his legs in a chimney, elves throwing presents and
+elves building one in their workshop. A different scene each time
 the plugin comes round.
 
 - Normal rotation: display() is called repeatedly and animates at

@@ -4,12 +4,15 @@
 
 First release.
 
-- Seven animated scenes, all drawn in code: Santa's sleigh and four reindeer
-  (Rudolph's nose blinks, the legs gallop), two waving snowmen in falling
+- Eight animated scenes, all drawn in code: Santa's sleigh and four reindeer
+  (Rudolph's nose glows, the legs gallop), two waving snowmen in falling
   snow, trees with blinking ornaments and bouncing presents, six dancing
   gingerbread men, strings of chasing lights top and bottom with flashing
-  letters, Santa stuck in a chimney kicking his legs, and elves who throw a
-  present across the whole card.
+  letters, Santa stuck in a chimney kicking his legs, elves who throw a
+  present across the whole card, and elves building a present in their
+  workshop.
+- Snow and stars fill the whole card, drawn last and kept a pixel clear of
+  every letter and every character.
 - Every scene fills the card: whatever room the words leave on the right gets
   a second tree, more dancers, the moon or another elf.
 - The days left until Christmas in big digits, `1 DAY` on Christmas Eve and

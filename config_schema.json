@@ -29,7 +29,8 @@
           "gingerbread",
           "lights",
           "chimney",
-          "elves"
+          "elves",
+          "workshop"
         ]
       },
       "uniqueItems": true,
@@ -40,7 +41,8 @@
         "gingerbread",
         "lights",
         "chimney",
-        "elves"
+        "elves",
+        "workshop"
       ]
     },
     "order": {

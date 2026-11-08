@@ -82,9 +82,9 @@ _DEER_TOP = [
     "..........T.T...",
     "...........TT...",
     "..........TTTT..",
-    "..........bbb...",
-    "..........bkbbN.",
-    "...........bb...",
+    "..........bbb..q",
+    "..........bkbbNN",
+    "...........bb..q",
     "W.bbbbbbbbbbb...",
     ".bbbbbbbbbbbb...",
     "..bbbbbbbbbb....",
@@ -208,8 +208,19 @@ def elf(pose: int) -> Image.Image:
     return sprite(ELF_HAT[pose % 2] + ELF_FACE + ELF_BODY[pose % 2] + ELF_LEGS)
 
 
-def reindeer(pose: int, nose: Tuple[int, int, int]) -> Image.Image:
-    return sprite(_DEER_TOP + DEER_LEGS[pose % 2], {"N": nose})
+RUDOLPH = (255, 0, 0)          # full red, always lit: a dim blink step vanished on the panel
+RUDOLPH_GLOW = (255, 110, 90)
+
+
+def reindeer(pose: int, rudolph: bool = False, glow: bool = False) -> Image.Image:
+    """A reindeer; Rudolph has a 2-pixel nose that is always lit, with a glow
+    above and below it that blinks."""
+    rows = _DEER_TOP + DEER_LEGS[pose % 2]
+    if not rudolph:
+        return sprite([r.replace("N", "k").replace("q", ".") for r in rows])
+    if not glow:
+        rows = [r.replace("q", ".") for r in rows]
+    return sprite(rows, {"N": RUDOLPH, "q": RUDOLPH_GLOW})
 
 
 def snowman(wave: int) -> Image.Image:
@@ -230,21 +241,37 @@ def gingerbread(pose: int) -> Image.Image:
 
 
 # ── texture: stars, snow ───────────────────────────────────────────────────
+# Drawn LAST, over the finished card, and only where the card is dark for a
+# pixel all round: so the sky fills the whole width, including between and
+# after the words, and never touches a letter or the art. (Drawn first, the
+# words' cleared margin wiped it from the words to the edge -- "some of the
+# snow was just on half the card", 2026-11-08.)
+def _clear_around(base, w: int, x: int, y: int) -> bool:
+    if not (0 <= x < w and 0 <= y < H):
+        return False
+    for yy in range(max(0, y - 1), min(H, y + 2)):
+        for xx in range(max(0, x - 1), min(w, x + 2)):
+            if base[xx, yy] != (0, 0, 0):
+                return False
+    return True
+
+
 def stars(img: Image.Image, n: int, seed: int, phase: int) -> None:
     rnd = random.Random(seed)
+    base = img.copy().load()
     px = img.load()
     w = img.width
     for i in range(n):
         x, y = rnd.randrange(w), rnd.randrange(H)
-        if px[x, y][:3] != (0, 0, 0):
-            continue
-        v = (60, 120, 200)[(i + phase) % 3]
-        px[x, y] = (v, v, v)
+        if _clear_around(base, w, x, y):
+            v = (60, 120, 200)[(i + phase) % 3]
+            px[x, y] = (v, v, v)
 
 
 def snow(img: Image.Image, n: int, seed: int, phase: int, floor: int = H) -> None:
     rnd = random.Random(seed)
-    d = ImageDraw.Draw(img)
+    base = img.copy().load()
+    px = img.load()
     w = img.width
     for _ in range(n):
         x0, y0 = rnd.randrange(w), rnd.randrange(floor)
@@ -253,9 +280,12 @@ def snow(img: Image.Image, n: int, seed: int, phase: int, floor: int = H) -> Non
         y = (y0 + phase * (2 if big else 1)) % floor
         x = (x0 + drift * (phase // 2)) % w
         if big:
-            d.point([(x, y), (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)], fill=(200, 220, 255))
+            dots, colour = [(x, y), (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)], (200, 220, 255)
         else:
-            d.point((x, y), fill=(220, 230, 255))
+            dots, colour = [(x, y)], (220, 230, 255)
+        for dx, dy in dots:
+            if _clear_around(base, w, dx, dy):
+                px[dx, dy] = colour
 
 
 # ── text ───────────────────────────────────────────────────────────────────
@@ -376,34 +406,33 @@ def scene_sleigh(days: int, phase: int, width: int) -> Image.Image:
         last = None
         for i in range(team):
             rudolph = i == team - 1
-            nose = (PAL["N"] if phase % 2 == 0 else PAL["n"]) if rudolph else PAL["k"]
             y = 13 - i * 2 + ((phase + i) % 2)
-            paste(img, reindeer(phase + i, nose), dx, y)
+            paste(img, reindeer(phase + i, rudolph, phase % 2 == 0), dx, y)
             last = (dx, y)
             dx += 17
         d = ImageDraw.Draw(img)
         d.line([(x + 22, sleigh_y + 7), (last[0] + 12, last[1] + 7)], fill=PAL["y"])
         right = dx
-    stars(img, width // 6, 1, phase)
     place_words(img, words, right, (GOLD, WHITE, GREEN))
     if width >= 192:  # the moon, after the words: their margin would bite it
         d = ImageDraw.Draw(img)
         d.ellipse([width - 18, 2, width - 5, 15], fill=(255, 240, 170))
         d.ellipse([width - 22, 0, width - 9, 13], fill=(0, 0, 0))
+    stars(img, width // 6, 1, phase)
     return img
 
 
 def scene_snowman(days: int, phase: int, width: int) -> Image.Image:
     img = Image.new("RGB", (width, H))
     words = Words(days, "SNOWY DAYS", "TILL CHRISTMAS")
-    snow(img, width // 4, 2, phase, floor=30)
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 30, width - 1, 31], fill=(220, 230, 255))
+    d.rectangle([0, 30, width - 1, 31], fill=(235, 240, 255))    # the ground, not a snow colour
     paste(img, snowman(phase), 4, 10)
     right = 18
     place_words(img, words, right, ((0, 200, 255), WHITE, (0, 200, 255)))
     if width >= 192:
         paste(img, snowman(phase + 1), width - 17, 10)
+    snow(img, width // 4, 2, phase, floor=29)
     return img
 
 
@@ -447,10 +476,10 @@ def scene_presents(days: int, phase: int, width: int) -> Image.Image:
     for i, (w, h, box, rib) in enumerate(PRESENTS[:count]):
         _present(img, x, w, h, box, rib, 2 if phase % count == i else 0)
         x += w + 1
-    stars(img, width // 10, 3, phase)
     right = place_words(img, words, x, (RED, WHITE, GREEN))
     for tx in spare(img, right, 23):
         _tree(img, tx, phase + 1)
+    stars(img, width // 10, 3, phase)
     return img
 
 
@@ -463,11 +492,11 @@ def scene_gingerbread(days: int, phase: int, width: int) -> Image.Image:
         up = (phase + i) % 2
         paste(img, gingerbread(phase + i), x, 10 - 2 * up)
         x += 16
-    stars(img, width // 12, 4, phase)
     right = place_words(img, words, x - 2, (PAL["L"], WHITE, PAL["L"]))
     for j, gx in enumerate(spare(img, right, 12, count=3)):
         up = (phase + j + 1) % 2
         paste(img, gingerbread(phase + j + 1), gx, 10 - 2 * up)
+    stars(img, width // 6, 4, phase)
     return img
 
 
@@ -545,7 +574,6 @@ def scene_chimney(days: int, phase: int, width: int) -> Image.Image:
     d.rectangle([wx, 27, wx + 6, 31], fill=glow)
     d.line([(wx + 3, 27), (wx + 3, 31)], fill=(120, 30, 30))
     d.line([(wx, 29), (wx + 6, 29)], fill=(120, 30, 30))
-    snow(img, width // 8, 5, phase)
     d = ImageDraw.Draw(img)
     d.rectangle([cx - 1, 15, cx + 12, 16], fill=WHITE)          # snow on the rim
     _santa_legs(d, cx, phase)
@@ -554,6 +582,7 @@ def scene_chimney(days: int, phase: int, width: int) -> Image.Image:
         d = ImageDraw.Draw(img)
         d.ellipse([mx, 4, mx + 11, 15], fill=(255, 240, 170))
         d.ellipse([mx - 4, 2, mx + 7, 13], fill=(0, 0, 0))
+    snow(img, width // 6, 5, phase)
     return img
 
 
@@ -573,7 +602,6 @@ def scene_elves(days: int, phase: int, width: int) -> Image.Image:
             up = 8 if (phase + i) % 2 else 2
             _present(img, x, 8, 7, box, rib, up)
             x += 10
-    snow(img, width // 10, 6, phase)
     right = place_words(img, words, x, (PAL["G"], WHITE, PAL["R"]))
     spot = spare(img, right, 12)
     if spot:
@@ -581,23 +609,117 @@ def scene_elves(days: int, phase: int, width: int) -> Image.Image:
         hop = (phase + 1) % 2
         paste(img, elf(phase + 1), ex, 10 - 2 * hop)
         _throw(img, x - 2, ex - 3, phase)
+    snow(img, width // 8, 6, phase)
     return img
 
 
-THROW_STEPS = 8   # steps for one throw across the card; then it comes back
+THROW_STEPS = 8   # steps for one throw across the card; then the next present
 
 
 def _throw(img: Image.Image, left: int, right: int, phase: int) -> None:
     """A present thrown in a high arc from the left elves to the elf on the right,
-    over the words, and back again on the next throw."""
+    over the words. Always left to right: each throw is a new present, in the
+    next colour (the owner, 2026-11-08: "throw the package from the left to the
+    right elf")."""
     k = phase % THROW_STEPS
-    going = (phase // THROW_STEPS) % 2 == 0
     t = k / (THROW_STEPS - 1)
-    if not going:
-        t = 1 - t
+    box, rib = THROWN[(phase // THROW_STEPS) % len(THROWN)]
     x = int(round(left + (right - left) * t))
     lift = int(round(4 + 22 * math.sin(math.pi * t)))   # the present's bottom, rows up
-    _present(img, x - 3, 7, 6, PAL["P"], PAL["Y"], min(lift, H - 9))
+    _present(img, x - 3, 7, 6, box, rib, min(lift, H - 9))
+
+
+THROWN = ((PAL["P"], PAL["Y"]), (PAL["R"], WHITE), (PAL["C"], PAL["Y"]), (PAL["Y"], PAL["R"]))
+
+
+# ── the workshop: elves building a present, one step at a time ────────────
+BUILD_STEPS = 8   # bottom, sides, box, lid, ribbon down, ribbon across, bow, done
+WOOD, WOOD_DARK = (150, 90, 40), (100, 60, 25)
+HAMMER_HEAD = (150, 150, 160)
+BUILT = ((PAL["R"], PAL["Y"]), (PAL["C"], WHITE), (PAL["G"], PAL["R"]), (PAL["P"], PAL["Y"]))
+
+
+def _build(d: ImageDraw.ImageDraw, x: int, phase: int) -> None:
+    """The present on the bench, x..x+11, its bottom on row 24, as far along as
+    this step of the build."""
+    k = phase % BUILD_STEPS
+    box, rib = BUILT[(phase // BUILD_STEPS) % len(BUILT)]
+    w, full = 12, 9
+    h = (2, 5, full, full, full, full, full, full)[k]
+    top = 25 - h
+    d.rectangle([x, top, x + w - 1, 24], fill=box)
+    if k >= 3:                                   # the lid
+        lid = tuple(min(255, c + 70) for c in box)
+        d.rectangle([x - 1, top, x + w, top + 1], fill=lid)
+    cx = x + w // 2
+    if k >= 4:                                   # ribbon down
+        d.rectangle([cx - 1, top, cx, 24], fill=rib)
+    if k >= 5:                                   # ribbon across
+        d.rectangle([x, top + 4, x + w - 1, top + 5], fill=rib)
+    if k >= 6:                                   # the bow
+        d.point([(cx - 3, top - 2), (cx - 2, top - 1), (cx + 2, top - 2), (cx + 1, top - 1),
+                 (cx - 2, top - 3), (cx + 1, top - 3), (cx - 1, top - 1), (cx, top - 1)], fill=rib)
+    if k == 7:                                   # done: it sparkles
+        d.point([(x - 3, top - 2), (x + w + 2, top - 1), (x - 2, top + 4),
+                 (x + w + 3, top + 5), (cx, top - 6)], fill=WHITE)
+
+
+def _hammer(d: ImageDraw.ImageDraw, phase: int, box_x: int, box_top: int) -> None:
+    """The left elf's hammer: raised over his shoulder on one step, and on the
+    next swung level into the side of the box, sparks flying where it lands."""
+    steel, steel_dark = (185, 185, 195), (120, 120, 130)
+    if phase % 2:
+        # raised: hands up at row 22, the handle tilted back, the head on top
+        d.line([(11, 21), (14, 15)], fill=WOOD)
+        d.line([(12, 21), (15, 15)], fill=WOOD_DARK)
+        d.rectangle([12, 12, 18, 14], fill=steel)
+        d.rectangle([12, 14, 18, 14], fill=steel_dark)
+    else:
+        # striking: hands down at row 24, the handle level, the head on the box
+        y = min(max(box_top + 1, 18), 21)     # above the bench (row 25), even for a low box
+        d.line([(12, y + 1), (box_x - 5, y + 1)], fill=WOOD)
+        d.rectangle([box_x - 4, y - 2, box_x - 2, y + 3], fill=steel)
+        d.rectangle([box_x - 4, y - 2, box_x - 4, y + 3], fill=steel_dark)
+        d.point([(box_x - 1, y - 4), (box_x + 1, y - 3), (box_x - 2, y - 5),
+                 (box_x, y + 5), (box_x + 2, y - 1)], fill=PAL["Y"])
+
+
+def scene_workshop(days: int, phase: int, width: int) -> Image.Image:
+    img = Image.new("RGB", (width, H))
+    words = Words(days, "DAYS LEFT", "TO MAKE TOYS!")
+    d = ImageDraw.Draw(img)
+    k = phase % BUILD_STEPS
+    # the bench
+    d.rectangle([13, 25, 46, 26], fill=WOOD)
+    d.rectangle([14, 27, 15, 31], fill=WOOD_DARK)
+    d.rectangle([44, 27, 45, 31], fill=WOOD_DARK)
+    box_x = 24
+    _build(d, box_x, phase)
+    # the hammering elf on the left: busy while the box goes together
+    hammering = k < 4
+    paste(img, elf(1 if (hammering and phase % 2) or k == 7 else 0), 1, 11 - (2 if k == 7 else 0))
+    if hammering:
+        h = (2, 5, 9, 9)[k]
+        _hammer(d, phase, box_x, 25 - h)
+    # the wrapping elf on the right: hands up while the ribbon and bow go on,
+    # and both hop when it is done
+    wrapping = 4 <= k <= 6
+    hop = 2 if k == 7 else 0
+    paste(img, elf(1 if wrapping or k == 7 else 0), 47, 11 - hop)
+    if wrapping:
+        # the ribbon runs from the wrapping elf's raised hand to the box
+        _, rib = BUILT[(phase // BUILD_STEPS) % len(BUILT)]
+        d.line([(47, 22), (box_x + 12, 18 + (phase % 2) * 2)], fill=rib)
+    right = place_words(img, words, 58, (PAL["G"], WHITE, GOLD))
+    # finished presents piling up on the right, when there is room
+    pile = spare(img, right, 18)
+    if pile:
+        px = pile[0]
+        _present(img, px, 8, 7, PAL["R"], PAL["Y"], 0)
+        _present(img, px + 9, 8, 9, PAL["C"], WHITE, 0)
+        _present(img, px + 4, 7, 6, PAL["G"], PAL["R"], 9)
+    stars(img, width // 10, 7, phase)
+    return img
 
 
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
@@ -608,6 +730,7 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "lights": scene_lights,
     "chimney": scene_chimney,
     "elves": scene_elves,
+    "workshop": scene_workshop,
 }
 
 

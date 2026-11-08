@@ -5,21 +5,22 @@
 An animated countdown to Christmas for [LEDMatrix](https://github.com/ChuckBuilds/LEDMatrix),
 made for kids. Every time it comes round it shows a different scene, and every scene moves.
 
-![All seven scenes, animated](docs/preview.gif)
+![All eight scenes, animated](docs/preview.gif)
 
 ## The scenes
 
-![Sleigh, snowman, presents, gingerbread, lights, chimney, elves](docs/scenes.png)
+![Sleigh, snowman, presents, gingerbread, lights, chimney, elves, workshop](docs/scenes.png)
 
 | Scene | What moves |
 | --- | --- |
-| `sleigh` | Santa and four reindeer fly by. The legs gallop, the team bobs, and Rudolph's nose blinks. |
+| `sleigh` | Santa and four reindeer fly by. The legs gallop, the team bobs, and Rudolph's bright red nose glows. |
 | `snowman` | Snow falls and two snowmen wave. |
 | `presents` | Two trees with blinking ornaments and twinkling stars, and the presents take turns bouncing. |
 | `gingerbread` | Six gingerbread men dance, three on each side. |
 | `lights` | Strings of bulbs chase along the top and bottom, the number flashes colours, and the words stretch the width of the card, every letter flashing. |
 | `chimney` | Santa is stuck in the chimney with his legs in the air, kicking in turn, while snow falls and the window flickers. |
-| `elves` | The elves hop and toss presents, and one throws a present in a high arc across the whole card to the elf on the other side, and back. |
+| `elves` | The elves hop and toss presents, and one throws a present in a high arc across the whole card to the elf on the other side -- a new present, in a new colour, every throw. |
+| `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
 
 Each one shows the days left (`47 DAYS TILL CHRISTMAS`), `1 DAY` on Christmas Eve and
 `MERRY CHRISTMAS!` on the day itself.
@@ -33,7 +34,7 @@ There are no image files: all the art is in `santa_scenes.py`.
 | --- | --- | --- |
 | `enabled` | `false` | Show it. |
 | `display_duration` | `15` | Seconds on screen in normal rotation. |
-| `scenes` | all seven | Which scenes to show. |
+| `scenes` | all eight | Which scenes to show. |
 | `order` | `in_turn` | `in_turn` goes through them one after another; `random` picks a different one each time, never the one just shown. |
 | `season_start` | `11-01` | Month-day to start showing. It stays up through Christmas Day and shows nothing the rest of the year, so it can stay enabled all year. |
 | `animation_fps` | `6` | Animation steps per second in normal rotation. |
