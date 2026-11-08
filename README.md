@@ -1,17 +1,17 @@
 # Santa's Countdown
 
-**Version 1.0.1** (2026-11-08) · by [BigC07](https://github.com/BigC07) · [Changelog](CHANGELOG.md)
+**Version 1.1.0** (2026-11-08) · by [BigC07](https://github.com/BigC07) · [Changelog](CHANGELOG.md)
 
 An animated countdown to Christmas for [LEDMatrix](https://github.com/ChuckBuilds/LEDMatrix),
 made for kids. Every time it comes round it shows a different scene, and every scene moves.
 
-![All eight scenes, animated](docs/preview.gif)
+![All eleven scenes, animated](docs/preview.gif)
 
 ## The scenes
 
-They take turns in this order, so the two elf scenes never come one after the other.
+They take turns in this order, so no two elf scenes ever come one after the other.
 
-![Sleigh, elves, snowman, presents, gingerbread, workshop, lights, chimney](docs/scenes.png)
+![Sleigh, elves, snowman, loading, presents, gingerbread, clock, workshop, lights, tree, chimney](docs/scenes.png)
 
 | Scene | What moves |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2026-11-08
 
 - A ninth scene, `loading`: elves load Santa's parked sleigh one present at a
   time until the tower is full, then hop while it sparkles. It comes between
