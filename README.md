@@ -21,7 +21,7 @@ They take turns in this order, so the two elf scenes never come one after the ot
 | `loading` | Elves load Santa's parked sleigh: one lifts each present off the pile, the other hoists it over his head, and it lands on the growing tower in the back -- six presents, then the elves hop, the tower sparkles, and loading starts again. Two reindeer wait in harness. |
 | `presents` | Two trees with blinking ornaments and twinkling stars, and the presents take turns bouncing. |
 | `gingerbread` | Six gingerbread men dance, three on each side. |
-| `clock` | The time, ticking every second, in red-and-white candy-cane stripes that roll along; the date and the days to go underneath, and a row of candy canes whose stripes swap. `time_format` picks 12h or 24h; the time zone is the core's. |
+| `clock` | The time, ticking every second, in red-and-white candy-cane stripes that roll along, centred over the date and the days to go. `time_format` picks 12h or 24h; the time zone is the core's. |
 | `workshop` | Elves build a present at their bench, one step at a time: one hammers the box together, the other ties on the ribbon and bow, it sparkles when it is done, and the next one starts. |
 | `lights` | Strings of bulbs chase along the top and bottom, the number flashes colours, and the words stretch the width of the card, every letter flashing. |
 | `tree` | Santa and an elf trim the tree: Santa walks along the bottom hanging ornaments, the elf on a ladder hangs the top ones and puts the star on top, then the ornaments flash, Santa waves and the elf cheers. |

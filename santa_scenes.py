@@ -1036,17 +1036,6 @@ def scene_tree(days: int, phase: int, width: int) -> Image.Image:
 #: 4:32:15 PM, a second later every step, so a frame is still a pure function
 #: of its arguments. The plugin always passes the real time.
 DEMO_TIME = (16, 32, 15)
-CANE = ["..WRW.", ".R...W", ".W...R", ".....W", ".....R", ".....W", ".....R", ".....W",
-        ".....R", ".....W", ".....R", ".....W", ".....R", ".....W"]
-
-
-def candy_cane(img: Image.Image, x: int, y: int, phase: int) -> None:
-    """A candy cane whose stripes swap every step."""
-    rows = CANE if phase % 2 == 0 else \
-        [r.replace("W", "x").replace("R", "W").replace("x", "R") for r in CANE]
-    paste(img, sprite(rows), x, y)
-
-
 def candy_text(img: Image.Image, xy, s: str, size: int, phase: int) -> None:
     """Text filled with red and white diagonal stripes that roll along a step
     at a time."""
@@ -1066,8 +1055,9 @@ def candy_text(img: Image.Image, xy, s: str, size: int, phase: int) -> None:
 
 
 def scene_clock(days: int, phase: int, width: int, now=None, hour24: bool = False) -> Image.Image:
-    """The time, ticking every second, in candy-cane stripes that roll along;
-    the date and the days to go underneath; candy canes either side."""
+    """The time, ticking every second, in candy-cane stripes that roll along,
+    centred over the date and the days to go (the owner, 2026-11-08: the clock
+    centred over the days to go, and no candy canes)."""
     img = Image.new("RGB", (width, H))
     d = _draw(img)
     if now is None:
@@ -1076,40 +1066,46 @@ def scene_clock(days: int, phase: int, width: int, now=None, hour24: bool = Fals
     hour = now.hour if hour24 else (now.hour % 12) or 12
     hm, ss = ("%02d:%02d" if hour24 else "%d:%02d") % (hour, now.minute), ":%02d" % now.second
     ap = "" if hour24 else ("AM" if now.hour < 12 else "PM")
-    date = now.strftime("%a").upper() + " " + now.strftime("%m/%d/%y")
     togo = "MERRY CHRISTMAS!" if days <= 0 else ("1 DAY TO GO" if days == 1 else "%d DAYS TO GO" % days)
+    short = "XMAS!" if days <= 0 else ("1 DAY" if days == 1 else "%d DAYS" % days)
+    date = now.strftime("%a").upper() + " " + now.strftime("%m/%d/%y")
+
+    def line(parts):
+        """The bottom line, centred: (text, colour) pieces 8px apart."""
+        total = sum(text_width(t, 8) for t, _ in parts) + 8 * (len(parts) - 1)
+        x = (width - total) // 2
+        for t, c in parts:
+            d.text((x, 23), t, font=font(8), fill=c)
+            x += text_width(t, 8) + 8
+
     if width >= 192:
-        x = 14
-        candy_cane(img, 2, 9, phase)
+        tw = text_width(hm + ss, 16) + (4 + text_width(ap, 8) if ap else 0)
+        x = (width - tw) // 2
         candy_text(img, (x, 4), hm + ss, 16, phase)
-        x += text_width(hm + ss, 16) + 4
         if ap:
-            d.text((x, 4), ap, font=font(8), fill=GOLD)
-        d.text((14, 23), date, font=font(8), fill=GREEN)
-        tx = 14 + text_width(date, 8) + 8
-        if tx + text_width(togo, 8) <= width - 1:
-            d.text((tx, 23), togo, font=font(8), fill=PAL["R"])
-        # a row of candy canes in the space after the time
-        for i, cx in enumerate(range(x + (22 if ap else 4), width - 7, 14)):
-            candy_cane(img, cx, 9, phase + i + 1)
+            d.text((x + text_width(hm + ss, 16) + 4, 4), ap, font=font(8), fill=GOLD)
+        line([(date, GREEN), (togo, PAL["R"])])
     elif width >= 96:
-        x = 4
+        side = max(text_width(ap, 8), text_width(ss, 8))
+        x = (width - (text_width(hm, 16) + 2 + side)) // 2
         candy_text(img, (x, 4), hm, 16, phase)
         x += text_width(hm, 16) + 2
         if ap:
             d.text((x, 4), ap, font=font(8), fill=GOLD)
         candy_text(img, (x, 12), ss, 8, phase)
-        right = x + text_width(ss, 8)
-        d.text((4, 23), now.strftime("%m/%d/%y"), font=font(8), fill=GREEN)
-        if right + 10 <= width:
-            candy_cane(img, width - 8, 9, phase)
+        md = now.strftime("%m/%d")
+        line([(md, GREEN), (short, PAL["R"])] if text_width(md + short, 8) + 8 <= width
+             else [(md, GREEN)])
     else:
         # 64 columns: the whole time on one line in the small font
-        candy_text(img, (0, 6), hm + ss, 8, phase)
-        if ap:
-            d.text((0, 16), ap, font=font(8), fill=GOLD)
-        d.text((max(0, width - text_width(now.strftime("%m/%d"), 8)), 16),
-               now.strftime("%m/%d"), font=font(8), fill=GREEN)
+        t = hm + ss
+        candy_text(img, ((width - text_width(t, 8)) // 2, 6), t, 8, phase)
+        parts = ([(ap, GOLD)] if ap else []) + [(now.strftime("%m/%d"), GREEN)]
+        total = sum(text_width(p, 8) for p, _ in parts) + 8 * (len(parts) - 1)
+        x = max(0, (width - total) // 2)
+        for p, c in parts:
+            d.text((x, 17), p, font=font(8), fill=c)
+            x += text_width(p, 8) + 8
     snow(img, width // 12, 23, phase)
     return img
 
