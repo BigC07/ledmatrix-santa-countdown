@@ -96,15 +96,8 @@ DEER_LEGS = (
      "...b.b....b.b..."],      # tucked
 )
 
-SLEIGH = [
-    "..........W.............",
-    ".........RR.............",
-    "........RRR.............",
-    ".......WWWWW............",
-    ".......SSkSS............",
-    ".......WWWWW............",
-    "........WWW.............",
-    "Y.......RRRRR.........Y.",
+SLEIGH_BODY = [
+    "Y.....................Y.",
     "YYYYYYYYYYYYYYYYYYYYYYY.",
     "RRRRRRRRRRRRRRRRRRRRRR..",
     ".RRRRRRRRRRRRRRRRRRRR...",
@@ -113,13 +106,31 @@ SLEIGH = [
     "YYYYYYYYYYYYYYYYYYYYYYY.",
     ".......................Y",
 ]
-# Santa's waving arm, (x, y, char) over SLEIGH: up, with the hand swinging
-# in, then out. A tower of presents rides in the back (2026-11-08: "make the
-# presents extreme, make them really tall").
+# A big Santa ("make him bigger", 2026-11-08): 8 wide, 12 rows, facing the
+# reindeer, his belt on the sleigh's rim.
+SANTA = [
+    ".W......",
+    ".RR.....",
+    "..RRR...",
+    "..RRRR..",
+    ".WWWWWW.",
+    ".SSSSkS.",
+    ".SSSSSS.",
+    "WWWWWWWW",
+    ".WWWWWW.",
+    "RRWWWWRR",
+    "RRRRRRRR",
+    "bbbYYbbb",
+]
+# His waving arm, (x, y, char) over SANTA: up, the hand swinging in, then out.
 SANTA_WAVE = (
-    [(12, 6, "R"), (13, 5, "R"), (13, 4, "R"), (13, 3, "S")],
-    [(12, 6, "R"), (13, 5, "R"), (14, 4, "R"), (15, 3, "S")],
+    [(8, 10, "R"), (9, 9, "R"), (9, 8, "R"), (9, 7, "R"), (9, 6, "S"), (10, 6, "S")],
+    [(8, 10, "R"), (9, 9, "R"), (10, 8, "R"), (11, 7, "R"), (11, 6, "S"), (12, 6, "S")],
 )
+#: Santa sits forward of the tower of presents with a gap ("move Santa up in
+#: the sleigh just a little bit, not attached to the packages").
+SANTA_X = 10
+SLEIGH_RIM = len(SANTA) - 1      # the body's first row, in the sleigh sprite
 
 
 # The tower, bottom to top: (width, height, box, ribbon). 21 rows of presents.
@@ -146,9 +157,15 @@ def present_tower(img: Image.Image, x: int, base: int, phase: int) -> None:
 
 
 def sleigh(pose: int) -> Image.Image:
-    rows = [list(r) for r in SLEIGH]
+    """The sleigh with Santa in it, waving: 24 wide, the rim on row SLEIGH_RIM."""
+    santa = [list(r) + ["."] * 6 for r in SANTA]
     for x, y, ch in SANTA_WAVE[pose % 2]:
-        rows[y][x] = ch
+        santa[y][x] = ch
+    rows = [["."] * 24 for _ in range(SLEIGH_RIM)] + [list(r) for r in SLEIGH_BODY]
+    for y, row in enumerate(santa):
+        for x, ch in enumerate(row):
+            if ch != "." and SANTA_X + x < 24:
+                rows[y][SANTA_X + x] = ch
     return sprite(["".join(r) for r in rows])
 
 SNOWMAN = [
@@ -436,7 +453,7 @@ def scene_sleigh(days: int, phase: int, width: int) -> Image.Image:
     team = 4 if width >= 192 else (1 if width >= 96 else 0)
     x = 2
     sleigh_y = 15 + (phase % 2)
-    paste(img, sleigh(phase), x, sleigh_y)
+    paste(img, sleigh(phase), x, sleigh_y + 7 - SLEIGH_RIM)   # the rim stays on sleigh_y + 7
     present_tower(img, x, sleigh_y + 6, phase)
     right = x + 24
     if team:
