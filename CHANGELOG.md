@@ -20,6 +20,10 @@
   for the place in the hour it is midnight at home) and `home_location`
   (latitude, longitude: a white dot on the map). The map is drawn from the
   Natural Earth 110m outlines (public domain).
+- The loading elves no longer lift each present over their heads on arms
+  eleven rows long: they hold it at the chest, hands at their sides, and the
+  elf by the sleigh hops it up. A carried present gets an unlit border so a
+  green one shows against a green coat.
 
 ## [1.1.0] - 2026-11-08
 

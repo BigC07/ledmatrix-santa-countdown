@@ -836,23 +836,25 @@ def _box(d: ImageDraw.ImageDraw, x: int, bottom: int, w: int, h: int, box, rib) 
 
 
 def _carry(img: Image.Image, ex: int, gift, high: bool) -> None:
-    """An elf standing at ex holding a present: low in front of him, or lifted
-    over his head in both arms. With no present, he just stands, hands down."""
+    """An elf standing at ex holding a present in front of his chest, his hands
+    at its sides; `high`, he hops it up to load it. With no present, he just
+    stands, hands down. No long arms: the overhead lift drew two arms eleven
+    rows long past his hat (the owner, 2026-11-08, on the wall: "Fix these
+    elves arms they're really long")."""
     d = ImageDraw.Draw(img)
     if gift is None:
         paste(img, elf(0), ex, 10)
         return
     w, h, box, rib = gift
     bx = ex + 5 - w // 2
-    if high:
-        paste(img, elf(1), ex, 10)
-        _box(d, bx, 8, w, h, box, rib)
-        d.line([(ex, 20), (bx - 1, 9)], fill=PAL["G"])
-        d.line([(ex + 10, 20), (bx + w, 9)], fill=PAL["G"])
-        d.point([(bx - 1, 8), (bx + w, 8)], fill=PAL["S"])
-    else:
-        paste(img, elf(0), ex, 10)
-        _box(d, bx, 25, w, h, box, rib)
+    lift = 2 if high else 0
+    paste(img, elf(0), ex, 10 - lift)
+    # an unlit pixel round it, or a green present vanishes into his green coat
+    d.rectangle([bx - 1, 25 - lift - h, bx + w, 26 - lift], fill=(0, 0, 0))
+    _box(d, bx, 25 - lift, w, h, box, rib)
+    hands = 23 - lift                       # the row of his hands, at his sides
+    d.line([(ex + 1, hands), (bx - 1, hands)], fill=PAL["S"])
+    d.line([(bx + w, hands), (ex + 9, hands)], fill=PAL["S"])
 
 
 def scene_loading(days: int, phase: int, width: int) -> Image.Image:
@@ -884,10 +886,10 @@ def scene_loading(days: int, phase: int, width: int) -> Image.Image:
             for ex in ((9, near) if wide else (near,)):
                 paste(img, elf(1 if hop else 0), ex, 8 if hop else 10)
         elif wide:
-            # the elf at the pile lifts each present up; the elf by the sleigh
-            # takes it over his head, and on the next step it is aboard
+            # the elf at the pile picks each present up; the elf by the sleigh
+            # takes it and hops it up, and on the next step it is aboard
             first = k % 2 == 0
-            _carry(img, 9, gift if first else None, True)
+            _carry(img, 9, gift if first else None, False)
             _carry(img, near, None if first else gift, True)
         else:
             _carry(img, near, gift, k % 2 == 1)
