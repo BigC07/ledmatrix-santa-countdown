@@ -836,25 +836,23 @@ def _box(d: ImageDraw.ImageDraw, x: int, bottom: int, w: int, h: int, box, rib) 
 
 
 def _carry(img: Image.Image, ex: int, gift, high: bool) -> None:
-    """An elf standing at ex holding a present in front of his chest, his hands
-    at its sides; `high`, he hops it up to load it. With no present, he just
-    stands, hands down. No long arms: the overhead lift drew two arms eleven
-    rows long past his hat (the owner, 2026-11-08, on the wall: "Fix these
-    elves arms they're really long")."""
+    """An elf standing at ex with a present balanced on the tip of his hat,
+    up against the sky; `high`, he hops it up to load it. With no present, he
+    just stands, hands down.
+
+    The owner, 2026-11-08, on the wall: first "Fix these elves arms they're
+    really long" (an overhead lift on arms eleven rows long), then of the
+    present held at the chest instead, "It's hard to make out the presents in
+    the middle" -- a box on a green coat blurs into it. Of three mock-ups they
+    picked B: on his hat, where it has black all round and needs no arms."""
     d = ImageDraw.Draw(img)
     if gift is None:
         paste(img, elf(0), ex, 10)
         return
     w, h, box, rib = gift
-    bx = ex + 5 - w // 2
     lift = 2 if high else 0
-    paste(img, elf(0), ex, 10 - lift)
-    # an unlit pixel round it, or a green present vanishes into his green coat
-    d.rectangle([bx - 1, 25 - lift - h, bx + w, 26 - lift], fill=(0, 0, 0))
-    _box(d, bx, 25 - lift, w, h, box, rib)
-    hands = 23 - lift                       # the row of his hands, at his sides
-    d.line([(ex + 1, hands), (bx - 1, hands)], fill=PAL["S"])
-    d.line([(bx + w, hands), (ex + 9, hands)], fill=PAL["S"])
+    paste(img, elf(1), ex, 10 - lift)
+    _box(d, ex + 8 - w // 2, 9 - lift, w, h, box, rib)    # sitting on his hat's tip
 
 
 def scene_loading(days: int, phase: int, width: int) -> Image.Image:
@@ -879,17 +877,19 @@ def scene_loading(days: int, phase: int, width: int) -> Image.Image:
         for w, h, box, rib in reversed(TOWER[k // 2 + 1:] if not done else ()):
             _box(d, 1 + (7 - w) // 2, y, w, h, box, rib)
             y -= h
-        near = 21 if wide else 9                        # the elf by the sleigh
-        sx = near + 13
+        # black between the pile, the elves and the sleigh: touching, they ran
+        # together into one shape on the wall
+        near = 26 if wide else 11                       # the elf by the sleigh
+        sx = near + 14
         if done:
             hop = k == 2 * n
-            for ex in ((9, near) if wide else (near,)):
+            for ex in ((11, near) if wide else (near,)):
                 paste(img, elf(1 if hop else 0), ex, 8 if hop else 10)
         elif wide:
-            # the elf at the pile picks each present up; the elf by the sleigh
-            # takes it and hops it up, and on the next step it is aboard
+            # the elf at the pile puts each present on his hat; the elf by the
+            # sleigh takes it on his and hops it up, and next step it is aboard
             first = k % 2 == 0
-            _carry(img, 9, gift if first else None, False)
+            _carry(img, 11, gift if first else None, False)
             _carry(img, near, None if first else gift, True)
         else:
             _carry(img, near, gift, k % 2 == 1)
