@@ -1232,21 +1232,33 @@ def nice_steps(count: int) -> int:
     return 3 * count + 2
 
 
+def nice_roll_steps(count: int) -> int:
+    """Steps for three or more names rolling up the scroll: blank, each name
+    coming in on the bottom line, the last one alone on the top line."""
+    return count + 2
+
+
 def scene_nicelist(days: int, phase: int, width: int, names=()) -> Image.Image:
-    """Santa holds up his Nice List. The names are written in one at a time
-    and ticked, then he checks it twice: each tick flashes again. Two names
-    to a scroll; more take turns, two at a time. On a 64-wide card there is
-    no room for ticks: a ticked name turns green instead."""
+    """Santa holds up his Nice List. One or two names: written in one at a
+    time and ticked, then he checks it twice: each tick flashes again. Three
+    or more roll up the scroll a line a second: each comes in on the bottom
+    line and is ticked on the top one, so even twelve go round in 14 s, inside
+    one pass of the card across the wall (owner, 2026-11-09: taking turns two
+    at a time ran longer than a pass). On a 64-wide card there is no room for
+    ticks: a ticked name turns green instead."""
     img = Image.new("RGB", (width, H))
     d = ImageDraw.Draw(img)
     d.rectangle([0, 30, width - 1, 31], fill=GROUND)
     names = nice_names(names)
-    groups = [names[i:i + 2] for i in range(0, len(names), 2)]
-    k = phase % sum(nice_steps(len(g)) for g in groups)
-    for group in groups:
-        if k < nice_steps(len(group)):
-            break
-        k -= nice_steps(len(group))
+    n = len(names)
+    if n > 2:
+        k = phase % nice_roll_steps(n)
+        lines = [(name, 21 - 8 * (k - j - 1), k - j - 1 == 1, False)
+                 for j, name in enumerate(names) if 0 <= k - j - 1 <= 1]
+    else:
+        k = phase % nice_steps(n)
+        lines = [(name, 13 + i * 8, k >= 2 * i + 2, k == 2 * n + 1 + i)
+                 for i, name in enumerate(names) if k >= 2 * i + 1]
     santa = width >= 192
     ticks = width >= 96
     head = "NICE LIST" if width >= 96 else "NICE"
@@ -1262,16 +1274,11 @@ def scene_nicelist(days: int, phase: int, width: int, names=()) -> Image.Image:
     t = _draw(img)
     t.text(((x0 + x1 - text_width(head, 8)) // 2 + 1, 4), head, font=font(8), fill=GOLD)
     room = x1 - x0 - 10 - (9 if ticks else 0)
-    n = len(group)
-    for i, name in enumerate(group):
+    for name, y, ticked, twice in lines:          # twice: checking it twice, this one flashes
         while len(name) > 1 and text_width(name, 8) > room:
             name = name[:-1]
-        y = 13 + i * 8
-        ticked = k >= 2 * i + 2
-        twice = k == 2 * n + 1 + i                 # checking it twice: this one flashes
-        if k >= 2 * i + 1:
-            colour = WHITE if ticks or not ticked or twice else TICK_GREEN
-            t.text((x0 + 6, y), name, font=font(8), fill=colour)
+        colour = WHITE if ticks or not ticked or twice else TICK_GREEN
+        t.text((x0 + 6, y), name, font=font(8), fill=colour)
         if ticks and ticked:
             paste(img, sprite(TICK, {"G": WHITE if twice else TICK_GREEN}),
                   x0 + 6 + text_width(name, 8) + 2, y)

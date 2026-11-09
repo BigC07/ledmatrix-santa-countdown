@@ -80,7 +80,7 @@
     "nice_list": {
       "type": "array",
       "title": "Nice List names",
-      "description": "Names Santa writes on his Nice List and ticks, two to a scroll. Leave it empty for EVERYONE.",
+      "description": "Names Santa writes on his Nice List and ticks; three or more roll up the scroll. Leave it empty for EVERYONE.",
       "items": {
         "type": "string",
         "maxLength": 12

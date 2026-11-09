@@ -8,9 +8,10 @@
   and swings open. Every door is shut till December 1 and open on Christmas
   Day. Narrower panels show the 8 or 4 doors round today's.
 - A thirteenth scene, `nicelist`: Santa holds up his Nice List, writes each
-  name in and ticks it, then checks it twice -- each tick flashes again. Two
-  names to a scroll; more take turns. New setting `nice_list`; with no names
-  it says EVERYONE.
+  name in and ticks it, then checks it twice -- each tick flashes again.
+  Three or more names roll up the scroll a line a second, each ticked as it
+  reaches the top line, so even twelve go round in one pass of the card.
+  New setting `nice_list`; with no names it says EVERYONE.
 - A fourteenth scene, `tracker`: Santa's journey on Christmas Eve, worked out
   from the clock alone, so there is no feed to go dead on the night. He flies
   west with midnight, from Kiribati at 10:00 UTC on the 24th round the world
