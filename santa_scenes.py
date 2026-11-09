@@ -1113,6 +1113,360 @@ def scene_clock(days: int, phase: int, width: int, now=None, hour24: bool = Fals
     return img
 
 
+# ── the advent calendar ────────────────────────────────────────────────────
+#: 3x5 digits for the door numbers: the 8px font is too wide for a 9px door.
+DIGITS = {"0": "111101101101111", "1": "010110010010111", "2": "111001111100111",
+          "3": "111001111001111", "4": "101101111001001", "5": "111100111001111",
+          "6": "111100111101111", "7": "111001001001001", "8": "111101111101111",
+          "9": "111101111001111"}
+
+
+def tiny_number(d: ImageDraw.ImageDraw, x: int, y: int, s: str, fill) -> None:
+    for ch in s:
+        d.point([(x + i % 3, y + i // 3) for i, b in enumerate(DIGITS[ch]) if b == "1"], fill=fill)
+        x += 4
+
+
+def tiny_width(s: str) -> int:
+    return len(s) * 4 - 1
+
+
+#: Behind each door, 1 to 24: no wider than 7, no taller than 9.
+ADVENT = [
+    STAR,                                                                    # 1 star
+    ["..RWR..", ".W...W.", ".R...R.", ".....W.", ".....R.", ".....W.", ".....R.", ".....W.",
+     ".....R."],                                                             # 2 candy cane
+    ["...Y...", "..YYY..", ".YYYYY.", ".YYYYY.", ".YYYYY.", "YYYYYYY", "YYYYYYY", "...y..."],  # 3 bell
+    [".WWWW..", ".RRRR..", ".RRRR..", ".RRRR..", ".RRRR..", ".RRRRR.", "RRRRRRR", "RRRRRR.",
+     ".RRR..."],                                                             # 4 stocking
+    [".CCC...", "CCCCC..", "CCCCC.C", "CCCCCCC", "CCCCCC.", "CCCCC..", "WWWWW..", "WWWWW.."],  # 5 mitten
+    ["...y...", "..YYY..", ".RRRRR.", "RRRRRRR", "RWRWRWR", "RRRRRRR", ".RRRRR.", "..RRR.."],  # 6 bauble
+    [".G...G.", "GGG.GGG", "GGGGGGG", ".GGRGG.", "..RRR..", "...R..."],     # 7 holly
+    ["..LLL..", ".LkLkL.", "..LLL..", "LLLWLLL", "..LLL..", "..LWL..", ".LL.LL.", ".L...L."],  # 8 gingerbread
+    ["...W...", ".W.W.W.", "..WWW..", "WWWWWWW", "..WWW..", ".W.W.W.", "...W..."],  # 9 snowflake
+    [".R...R.", "..R.R..", "GGGRGGG", "GGGRGGG", "RRRRRRR", "GGGRGGG", "GGGRGGG", "GGGRGGG"],  # 10 present
+    [".....W.", "....RR.", "...RRR.", "..RRRR.", ".RRRRR.", "WWWWWWW", "WWWWWWW"],  # 11 Santa's hat
+    ["...Y...", "..YOY..", "...O...", "..RRR..", "..RRR..", "..RRR..", "..RRR..", ".YYYYY."],  # 12 candle
+    [".W.W...", "..W.W..", ".......", "WWWWW..", "WBBBWW.", "WBBBW.W", "WBBBWW.", "WWWWW.."],  # 13 cocoa
+    ["..LLL..", ".LLbLL.", "LLLLLbL", "LbLLLLL", "LLLLbLL", ".LbLLL.", "..LLL.."],  # 14 cookie
+    ["..GGG..", ".GRGGG.", "GG...GG", "GG...RG", "GR...GG", ".GGGRG.", "..RRR..", ".R...R."],  # 15 wreath
+    ["..www..", ".wwwww.", "..WWW..", "..WWW..", ".WWWWW.", "WWWWWWW", "WWWWWWW", ".WWWWW."],  # 16 snowman
+    [".W...W.", "..W.W..", "YYYYYYY", "RYRYRYR", "RRYRYRR", "RYRYRYR", "YYYYYYY"],  # 17 drum
+    ["T.....T", ".T...T.", "..bbb..", "..bbb..", ".bbbbb.", "..bbb..", "..bNb.."],  # 18 reindeer
+    ["......Y", ".....G.", "....GG.", "...GGG.", "..GGGG.", ".GGGGG.", "WWWWWWW", "WWWWWWW"],  # 19 elf's hat
+    ["LL...LL", "LLLLLLL", ".LkLkL.", ".LLbLL.", "..LLL..", ".LLLLL.", "LLLLLLL", ".LL.LL."],  # 20 teddy
+    ["R......", "RR...R.", "RRRRRR.", ".RRRRR.", "Y...Y..", "YYYYYYY"],     # 21 sleigh
+    ["..YYY..", "...S...", "WW.W.WW", ".WWWWW.", "..WWW..", ".WWWWW.", "WWWWWWW"],  # 22 angel
+    ["...Y...", "..YYY..", "...W...", "...R...", "...W...", "...R...", "...W...", "...R...",
+     ".WWWWW."],                                                             # 23 the North Pole
+    ["...Y...", "...G...", "..GGG..", ".GGRGG.", "..GGG..", ".GGGYG.", "GGGGGGG", "...B...",
+     "...B..."],                                                             # 24 a tree
+]
+ADVENT_DOOR = ((170, 0, 0), (0, 110, 0))
+ADVENT_STEPS = 6          # shut, half open, open, then its picture shows for three steps
+
+
+def advent_day(days: int) -> int:
+    """December's date on the calendar: 1-24 is today's door, 25 every door
+    open (Christmas Day), 0 before December (every door shut)."""
+    if days <= 0:
+        return 25
+    return 25 - days if days <= 24 else 0
+
+
+def scene_advent(days: int, phase: int, width: int) -> Image.Image:
+    """An advent calendar: numbered doors in a red and green checkerboard.
+    The days gone show their pictures; today's door has a blinking gold frame
+    and swings open. 24 doors on a wide card, the 8 or 4 round today's on a
+    narrower one."""
+    img = Image.new("RGB", (width, H))
+    d = ImageDraw.Draw(img)
+    day = advent_day(days)
+    k = phase % ADVENT_STEPS
+    cols = 12 if width >= 192 else (4 if width >= 96 else 2)
+    per = 2 * cols
+    today = min(max(day, 1), 24)
+    first = (today - 1) // per * per + 1
+    for j in range(per):
+        n = first + j
+        x, y = 2 + (j % cols) * 10, 2 + (j // cols) * 15
+        col = ADVENT_DOOR[(n + (n - 1) // 12) % 2]
+        if day >= 25 or n < day or (n == day and k >= 1):
+            d.rectangle([x, y, x, y + 12], fill=tuple(v // 3 for v in col))   # the door, swung back
+            pic = sprite(ADVENT[n - 1])
+            paste(img, pic, x + 1 + (8 - pic.width) // 2, y + (13 - pic.height) // 2)
+            if n == day and k == 1:                                          # half way
+                d.rectangle([x, y, x + 3, y + 12], fill=col)
+                d.line([(x + 4, y), (x + 4, y + 12)], fill=tuple(v // 2 for v in col))
+        else:
+            d.rectangle([x, y, x + 8, y + 12], fill=col)
+            tiny_number(d, x + (9 - tiny_width(str(n))) // 2, y + 4, str(n), GOLD)
+        if n == today and day < 25 and phase % 2 == 0:
+            d.rectangle([x - 1, y - 1, x + 9, y + 13], outline=GOLD)
+    bottom = "DOOR %d" % day if day else "DOORS DEC 1"
+    right = place_words(img, Words(days, "DAYS TO GO", bottom), 2 + cols * 10, (GOLD, WHITE, GREEN))
+    for tx in spare(img, right, 23):
+        _tree(img, tx, phase)
+    snow(img, width // 10, 7, phase)
+    return img
+
+
+# ── the nice list ──────────────────────────────────────────────────────────
+PARCHMENT, SCROLL_ROLL = (70, 50, 20), PAL["T"]
+TICK = ["......G", ".....GG", "G...GG.", "GG.GG..", ".GGG...", "..G...."]
+TICK_GREEN = (0, 230, 0)
+#: Who is on the list when nobody has been named in the settings.
+NICE_DEFAULT = ("EVERYONE",)
+
+
+def nice_names(names) -> List[str]:
+    out = [str(n).strip().upper() for n in (names or ()) if str(n).strip()]
+    return out or list(NICE_DEFAULT)
+
+
+def nice_steps(count: int) -> int:
+    """Steps for a scroll of `count` names (1 or 2): blank, then each name
+    written and ticked, then each tick flashing (checking it twice), a hold."""
+    return 3 * count + 2
+
+
+def scene_nicelist(days: int, phase: int, width: int, names=()) -> Image.Image:
+    """Santa holds up his Nice List. The names are written in one at a time
+    and ticked, then he checks it twice: each tick flashes again. Two names
+    to a scroll; more take turns, two at a time. On a 64-wide card there is
+    no room for ticks: a ticked name turns green instead."""
+    img = Image.new("RGB", (width, H))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 30, width - 1, 31], fill=GROUND)
+    names = nice_names(names)
+    groups = [names[i:i + 2] for i in range(0, len(names), 2)]
+    k = phase % sum(nice_steps(len(g)) for g in groups)
+    for group in groups:
+        if k < nice_steps(len(group)):
+            break
+        k -= nice_steps(len(group))
+    santa = width >= 192
+    ticks = width >= 96
+    head = "NICE LIST" if width >= 96 else "NICE"
+    widest = max(text_width(n, 8) for n in names) + (9 if ticks else 0)
+    x0 = 15 if santa else 1
+    x1 = min(x0 + max(text_width(head, 8), widest) + 12, width - 2)
+    if santa:
+        _standing_santa(img, 2, "out", reach=STAND_Y + 11)
+    d.rectangle([x0 + 2, 2, x1 - 2, 29], fill=PARCHMENT)
+    for rx in (x0, x1 - 2):
+        d.rectangle([rx, 0, rx + 2, 31], fill=SCROLL_ROLL)
+        d.line([(rx + 1, 0), (rx + 1, 31)], fill=PAL["B"])
+    t = _draw(img)
+    t.text(((x0 + x1 - text_width(head, 8)) // 2 + 1, 4), head, font=font(8), fill=GOLD)
+    room = x1 - x0 - 10 - (9 if ticks else 0)
+    n = len(group)
+    for i, name in enumerate(group):
+        while len(name) > 1 and text_width(name, 8) > room:
+            name = name[:-1]
+        y = 13 + i * 8
+        ticked = k >= 2 * i + 2
+        twice = k == 2 * n + 1 + i                 # checking it twice: this one flashes
+        if k >= 2 * i + 1:
+            colour = WHITE if ticks or not ticked or twice else TICK_GREEN
+            t.text((x0 + 6, y), name, font=font(8), fill=colour)
+        if ticks and ticked:
+            paste(img, sprite(TICK, {"G": WHITE if twice else TICK_GREEN}),
+                  x0 + 6 + text_width(name, 8) + 2, y)
+    right = x1
+    if width >= 96:
+        right = place_words(img, Words(days, "DAYS", "TILL CHRISTMAS"), x1, (GOLD, WHITE, GREEN))
+    for tx in spare(img, right, 23, count=2):
+        _tree(img, tx, phase)
+    snow(img, width // 8, 5, phase, floor=29)
+    return img
+
+
+# ── the Santa tracker ──────────────────────────────────────────────────────
+#: The world, 128 x 26: longitude 180W to 180E, latitude 72N to 44S, from the
+#: Natural Earth 110m land outlines (public domain, naturalearthdata.com).
+WORLD = [
+    "#.....##################################.....###########..............#######.....##############################################",
+    "###..##############################.######...######.....###.........############################################################",
+    ".....##########################.....####......###.................#####.######################################################..",
+    ".......##.......##################..#######..................###...###.###########################################.....###......",
+    "..................##########################.................######################################################.....#.......",
+    "...................#######################.##..................####################################################.............",
+    "...................####################......................#############..#.###.##############################..#.............",
+    "....................##################.......................###...#.#.###########.###########################...##.............",
+    ".....................################........................#######........###############################..#####..............",
+    ".......................############.........................################################################....................",
+    "........................######.....#......................#################################################.....................",
+    "..........................####..#...#.....................###################.#######....######.########........................",
+    "............................######........................####################.####.......###.....#####...##....................",
+    ".................................##..###..................########################.........##......####....##...................",
+    "...................................#########...............#######################..........#......#.....#..#...................",
+    "....................................##########.....................##############.................###..###......................",
+    "...................................###############.................############....................###.#####...###..............",
+    "...................................#################................##########.......................###.........####...........",
+    "....................................###############.................##########....................................#.#...........",
+    ".....................................##############.................###########.##..........................#####.##............",
+    ".......................................###########..................#########..###........................###########...........",
+    ".......................................##########....................########..##.......................##############..........",
+    ".......................................########......................#######............................###############.........",
+    "......................................########........................####...............................#############..........",
+    "......................................######.....................................................................#####........#.",
+    ".....................................#####..........................................................................#........##.",
+]
+WORLD_N, WORLD_S = 72, -44
+#: Where it is midnight on Christmas Eve, and when: (hours after 00:00 UTC on
+#: December 24, place, latitude, longitude). Santa flies west with midnight.
+ROUTE = ((10, "KIRIBATI", 1.9, 179.0), (12, "NEW ZEALAND", -41, 174), (13, "SOLOMON IS.", -9, 160),
+         (14, "AUSTRALIA", -33, 151), (15, "JAPAN", 36, 139), (16, "CHINA", 35, 115),
+         (17, "THAILAND", 14, 100), (18, "BANGLADESH", 24, 90), (18.5, "INDIA", 22, 78),
+         (19, "PAKISTAN", 30, 70), (20, "DUBAI", 25, 55), (21, "RUSSIA", 55.7, 37.6),
+         (22, "EGYPT", 30, 31), (23, "FRANCE", 47, 2), (24, "ENGLAND", 52, -1),
+         (25, "THE AZORES", 38, -28), (27, "BRAZIL", -15, -47), (28, "PUERTO RICO", 18, -66),
+         (29, "NEW YORK", 40.7, -74), (30, "TEXAS", 31, -97), (31, "COLORADO", 39, -105),
+         (32, "CALIFORNIA", 37, -120), (33, "ALASKA", 61, -150), (34, "HAWAII", 20, -157),
+         (35, "NORTH POLE", 85, -160))
+TAKEOFF_H, HOME_H = ROUTE[0][0], ROUTE[-1][0]
+SLEIGH_TINY = ["..W....", "..RR...", ".RRRS..", "YRRRRRY", ".Y...Y."]
+OCEAN = (0, 0, 45)
+#: For previews and tests, which pass no time: 7:30 PM on Christmas Eve in
+#: New York, Santa over England.
+TRACKER_DEMO_H = 24.5
+
+
+def _west(lon: float) -> float:
+    """How far west of the date line, 0-360: the way Santa goes."""
+    return (180 - lon) % 360
+
+
+def tracker_state(h: float) -> Dict:
+    """Where Santa is, `h` hours after 00:00 UTC on December 24."""
+    if h < TAKEOFF_H:
+        return {"mode": "pre", "h": h}
+    for a, b in zip(ROUTE, ROUTE[1:]):
+        if a[0] <= h < b[0]:
+            f = (h - a[0]) / (b[0] - a[0])
+            wa, wb = _west(a[3]), _west(b[3])
+            if wb < wa:
+                wb += 360
+            w = wa + (wb - wa) * f
+            return {"mode": "fly", "h": h, "place": a[1], "lat": a[2] + (b[2] - a[2]) * f,
+                    "lon": 180 - w % 360, "west": w % 360}
+    return {"mode": "home", "h": h}
+
+
+def _countdown(hours: float) -> str:
+    """4:30:00, or 15H 00M from ten hours out (so it fits beside the map)."""
+    t = max(0, round(hours * 3600))
+    if t >= 36000:
+        return "%dH %02dM" % (t // 3600, t // 60 % 60)
+    return "%d:%02d:%02d" % (t // 3600, t // 60 % 60, t % 60)
+
+
+def _visited(st: Dict, lon: float) -> bool:
+    return st["mode"] == "home" or (st["mode"] == "fly" and _west(lon) < st["west"])
+
+
+def _land(x: int, y: int, visited: bool, phase: int):
+    """Land: dark green till Santa has been, then green with gold lights twinkling."""
+    if not visited:
+        return (0, 75, 0)
+    h = ((x * 92837111) ^ (y * 689287499)) & 0xFFFF
+    return GOLD if (h + phase * 7919) % 11 == 0 else (0, 140, 0)
+
+
+def _world_map(img: Image.Image, x0: int, y0: int, st: Dict, phase: int, home, half: bool) -> None:
+    """The map at x0, y0: 128 x 26, or 64 x 13 if `half`. Santa's sleigh,
+    Rudolph's nose blinking ahead of it; home a blinking white dot."""
+    mw, mh = (64, 13) if half else (128, 26)
+    px = img.load()
+    for y in range(mh):
+        for x in range(mw):
+            if half:
+                land = sum(WORLD[2 * y + j][2 * x + i] == "#" for j in (0, 1) for i in (0, 1)) >= 2
+            else:
+                land = WORLD[y][x] == "#"
+            if 0 <= x0 + x < img.width:
+                lon = -180 + (x + 0.5) * 360 / mw
+                px[x0 + x, y0 + y] = _land(x, y, _visited(st, lon), phase) if land else OCEAN
+
+    def at(lat, lon):
+        lat = max(WORLD_S + 3, min(WORLD_N - 2, lat))
+        return (x0 + int((lon + 180) * mw / 360),
+                y0 + int((WORLD_N - lat) * mh / (WORLD_N - WORLD_S)))
+    d = ImageDraw.Draw(img)
+    if home.get("lat") is not None and home.get("lon") is not None and phase % 2 == 0:
+        hx, hy = at(float(home["lat"]), float(home["lon"]))
+        d.rectangle([hx, hy, hx + 1, hy + 1], fill=WHITE)
+    sx, sy = at(st["lat"], st["lon"]) if st["mode"] == "fly" else (x0 + mw // 2, y0 + 1)
+    paste(img, sprite(SLEIGH_TINY), sx - 3, sy - 3)
+    d.point([(sx - 5, sy)], fill=RUDOLPH if phase % 2 else (120, 0, 0))
+
+
+def tracker_words(days: int, now=None, home=None):
+    """Where Santa is and the card's three lines, each [(text, colour), ...].
+    `now` is the wall's local time (aware); None gives the demo moment."""
+    from datetime import datetime, timezone
+    home = home or {}
+    name = str(home.get("name") or "").strip().upper()
+    eve_days = max(0, days - 1)
+    if now is None:
+        h, home_h = TRACKER_DEMO_H, 29.0
+    else:
+        if now.tzinfo is None:
+            now = now.astimezone()
+        eve = datetime(now.year, 12, 24, tzinfo=timezone.utc)
+        h = (now - eve).total_seconds() / 3600
+        home_h = (datetime(now.year, 12, 25, tzinfo=now.tzinfo) - eve).total_seconds() / 3600
+        if days > 1 or (h >= HOME_H and days > 0):   # not Christmas Eve or Day: take-off ahead
+            h = min(h, TAKEOFF_H - 24)
+    st = tracker_state(h)
+    if st["mode"] == "pre":
+        left = TAKEOFF_H - h
+        when = _countdown(left) if left < 24 else ("1 DAY" if eve_days == 1 else "%d DAYS" % eve_days)
+        lines = ([("TAKE-OFF IN", WHITE)], [(when, GOLD)], [("FROM N. POLE", GREEN)])
+    elif st["mode"] == "home":
+        lines = ([("SANTA IS HOME", WHITE)], [("MERRY", GOLD)], [("CHRISTMAS!", GREEN)])
+    else:
+        place = name if name and home_h <= h < home_h + 1 else st["place"]
+        left = home_h - h
+        third = ([("HERE IN ", WHITE), (_countdown(left), GREEN)] if left > 0
+                 else [("HE IS HERE NOW!", GREEN)] if left > -1 else [("HE CAME HERE!", GREEN)])
+        lines = ([("SANTA IS OVER", WHITE)], [(place, GOLD)], third)
+    return st, lines
+
+
+def scene_tracker(days: int, phase: int, width: int, now=None, hour24: bool = False,
+                  home=None) -> Image.Image:
+    """Santa's journey on Christmas Eve, worked out from the clock alone (no
+    feed to go dead on the night): he flies west with midnight, from Kiribati
+    at 10:00 UTC on the 24th round the world and home by 11:00 UTC on the 25th.
+    The places he has been light up with gold, home blinks white, and it says
+    where he is and how long till he's here. Before then: the days to take-off.
+    The map and the words side by side on a wide card; the words alone at 128
+    columns; the map alone at 64. `home` is {"name", "lat", "lon"}, all optional:
+    the name stands in for the place in the hour it is midnight at home."""
+    img = Image.new("RGB", (width, H))
+    home = home or {}
+    st, lines = tracker_words(days, now, home)
+    t = _draw(img)
+
+    def say(x, y, parts):
+        for s, c in parts:
+            t.text((x, y), s, font=font(8), fill=c)
+            x += text_width(s, 8)
+    if width >= 192:
+        _world_map(img, 2, 3, st, phase, home, half=False)
+        for y, ln in zip((3, 13, 23), lines):
+            say(134, y, ln)
+    elif width >= 96:
+        for y, ln in zip((3, 13, 23), lines):
+            say(2, y, ln)
+    else:
+        _world_map(img, (width - 64) // 2, 9, st, phase, home, half=True)
+    stars(img, width // 10, 3, phase)
+    return img
+
+
 # The order they take turns in. No two elf cards come back to back, including
 # round the wrap from chimney to sleigh (the owner, 2026-11-08).
 SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
@@ -1121,11 +1475,14 @@ SCENES: Dict[str, Callable[[int, int, int], Image.Image]] = {
     "snowman": scene_snowman,
     "loading": scene_loading,
     "presents": scene_presents,
+    "advent": scene_advent,
     "gingerbread": scene_gingerbread,
     "clock": scene_clock,
     "workshop": scene_workshop,
+    "nicelist": scene_nicelist,
     "lights": scene_lights,
     "tree": scene_tree,
+    "tracker": scene_tracker,
     "chimney": scene_chimney,
 }
 #: Scenes too alike to show one after the other.
@@ -1135,9 +1492,10 @@ ELF_SCENES = frozenset({"elves", "loading", "workshop", "tree"})
 #: Each scene's sky, carried into the spare rows of a taller panel.
 SKY = {"sleigh": "stars", "elves": "snow", "snowman": "snow", "presents": "stars",
        "gingerbread": "stars", "workshop": "stars", "lights": "stars", "chimney": "snow",
-       "loading": "snow", "tree": "snow", "clock": "snow"}
+       "loading": "snow", "tree": "snow", "clock": "snow", "advent": "snow",
+       "nicelist": "snow", "tracker": "stars"}
 #: Scenes standing on snowy ground, which carries on below the card on a taller panel.
-GROUNDED = frozenset({"snowman", "loading", "tree"})
+GROUNDED = frozenset({"snowman", "loading", "tree", "nicelist"})
 
 
 def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot: int,
@@ -1164,11 +1522,15 @@ def _band_sky(img: Image.Image, top: int, rows: int, kind: str, phase: int, dot:
 
 
 #: Scenes that show the time: render() passes them `now` and `hour24`.
-TIMED = frozenset({"clock"})
+TIMED = frozenset({"clock", "tracker"})
+#: Scenes that take the names from the settings: render() passes `names`.
+NAMED = frozenset({"nicelist"})
+#: Scenes that mark home: render() passes `home` ({"name", "lat", "lon"}).
+HOMED = frozenset({"tracker"})
 
 
 def render(name: str, days: int, phase: int, width: int, height: int = H,
-           now=None, hour24: bool = False) -> Image.Image:
+           now=None, hour24: bool = False, names=(), home=None) -> Image.Image:
     """One frame of a scene, width x height. Taller panels get it scaled up whole,
     but never so far that fewer than 64 columns are left to draw in (a 64x64 panel
     shows the 64-wide card, centred, rather than a cramped 32-wide one doubled).
@@ -1177,7 +1539,14 @@ def render(name: str, days: int, phase: int, width: int, height: int = H,
     doesn't look like it's at the top and bottom")."""
     scale = max(1, min(height // H, width // 64))
     w = max(1, width // scale)
-    img = SCENES[name](days, phase, w, now, hour24) if name in TIMED else SCENES[name](days, phase, w)
+    kw: Dict = {}
+    if name in TIMED:
+        kw.update(now=now, hour24=hour24)
+    if name in NAMED:
+        kw["names"] = names
+    if name in HOMED:
+        kw["home"] = home
+    img = SCENES[name](days, phase, w, **kw)
     if scale > 1:
         img = img.resize((img.width * scale, H * scale), Image.NEAREST)
     if img.size != (width, height):

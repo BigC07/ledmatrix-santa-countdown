@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0] - 2026-11-08
+
+- A twelfth scene, `advent`: an advent calendar of 24 numbered doors in a red
+  and green checkerboard. The days gone show their pictures (a star, a candy
+  cane, a bell ... a tree on the 24th); today's door has a blinking gold frame
+  and swings open. Every door is shut till December 1 and open on Christmas
+  Day. Narrower panels show the 8 or 4 doors round today's.
+- A thirteenth scene, `nicelist`: Santa holds up his Nice List, writes each
+  name in and ticks it, then checks it twice -- each tick flashes again. Two
+  names to a scroll; more take turns. New setting `nice_list`; with no names
+  it says EVERYONE.
+- A fourteenth scene, `tracker`: Santa's journey on Christmas Eve, worked out
+  from the clock alone, so there is no feed to go dead on the night. He flies
+  west with midnight, from Kiribati at 10:00 UTC on the 24th round the world
+  and home by 11:00 UTC on the 25th; a world map lights up with gold where he
+  has been, and it says where he is and how long till he is here. Before
+  then it counts the days to take-off. New settings `home_name` (stands in
+  for the place in the hour it is midnight at home) and `home_location`
+  (latitude, longitude: a white dot on the map). The map is drawn from the
+  Natural Earth 110m outlines (public domain).
+
 ## [1.1.0] - 2026-11-08
 
 - A ninth scene, `loading`: elves load Santa's parked sleigh one present at a

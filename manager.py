@@ -5,8 +5,9 @@ An animated countdown to Christmas for kids: Santa's sleigh and reindeer,
 a waving snowman, bouncing presents, dancing gingerbread men, chasing
 lights, Santa kicking his legs in a chimney, elves throwing presents,
 building one in their workshop and loading the sleigh, Santa and an elf
-trimming the tree, and a candy-cane clock. A different scene each time
-the plugin comes round.
+trimming the tree, a candy-cane clock, an advent calendar, Santa's Nice
+List with the names from the settings, and a Santa tracker for Christmas
+Eve. A different scene each time the plugin comes round.
 
 - Normal rotation: display() is called repeatedly and animates at
   animation_fps.
@@ -54,6 +55,19 @@ def _season_start(raw: Any) -> tuple:
         return 11, 1
 
 
+def _home(config: Dict[str, Any]) -> Dict[str, Any]:
+    """The tracker's home: a name, and "lat, lon" if given (a white dot on the map)."""
+    home: Dict[str, Any] = {"name": str(config.get("home_name") or "").strip()[:12],
+                            "lat": None, "lon": None}
+    try:
+        lat, lon = (float(p) for p in str(config.get("home_location") or "").split(","))
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            home["lat"], home["lon"] = lat, lon
+    except ValueError:
+        pass
+    return home
+
+
 class SantaCountdownPlugin(BasePlugin):
 
     def __init__(self, plugin_id: str, config: Dict[str, Any],
@@ -82,6 +96,10 @@ class SantaCountdownPlugin(BasePlugin):
         except (TypeError, ValueError):
             self.vegas_hz = 1.0
         self.hour24 = config.get("time_format", "12h") == "24h"
+        raw = config.get("nice_list") or []
+        self.names: List[str] = [str(n).strip() for n in raw if str(n).strip()] \
+            if isinstance(raw, list) else []
+        self.home = _home(config)
 
     def on_config_change(self, new_config: Dict[str, Any]) -> None:
         super().on_config_change(new_config)
@@ -114,9 +132,9 @@ class SantaCountdownPlugin(BasePlugin):
         return self._now().date()
 
     def _frame(self, scene: str, days: int, phase: int, width: int, height: int):
-        if scene in TIMED:
-            return render(scene, days, phase, width, height, now=self._now(), hour24=self.hour24)
-        return render(scene, days, phase, width, height)
+        return render(scene, days, phase, width, height,
+                      now=self._now() if scene in TIMED else None, hour24=self.hour24,
+                      names=self.names, home=self.home)
 
     def _days_until_christmas(self) -> int:
         today = self._today()
