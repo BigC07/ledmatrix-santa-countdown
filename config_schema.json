@@ -93,14 +93,14 @@
       "title": "Home name",
       "maxLength": 12,
       "default": "",
-      "description": "Your town, for the Santa tracker: it shows as the place Santa is over in the hour it is midnight at home (e.g. DALTON)"
+      "description": "Your town, for the Santa tracker: it shows as the place Santa is over in the hour it is midnight at home (e.g. DENVER)"
     },
     "home_location": {
       "type": "string",
       "title": "Home location",
       "pattern": "^$|^\\s*-?[0-9]+(\\.[0-9]+)?\\s*,\\s*-?[0-9]+(\\.[0-9]+)?\\s*$",
       "default": "",
-      "description": "Latitude, longitude of home for the Santa tracker's map (e.g. 34.77, -84.97): it blinks white. Leave it empty for no dot. The time zone is the core's."
+      "description": "Latitude, longitude of home for the Santa tracker's map (e.g. 39.74, -104.99): it blinks white. Leave it empty for no dot. The time zone is the core's."
     },
     "season_start": {
       "type": "string",

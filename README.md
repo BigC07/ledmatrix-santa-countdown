@@ -48,7 +48,7 @@ The plugin loads no image files: all the art is code, in `santa_scenes.py`.
 | `time_format` | `12h` | The clock scene's time: `12h` (4:32:15 PM) or `24h` (16:32:15). |
 | `nice_list` | `[]` | Names on Santa's Nice List, up to 12 letters each. Empty: `EVERYONE`. |
 | `home_name` | `""` | Your town, shown as the place Santa is over in the hour it is midnight at home. |
-| `home_location` | `""` | `latitude, longitude` of home (e.g. `34.77, -84.97`): a blinking white dot on the tracker's map. The time zone is the core's. |
+| `home_location` | `""` | `latitude, longitude` of home (e.g. `39.74, -104.99`): a blinking white dot on the tracker's map. The time zone is the core's. |
 | `season_start` | `11-01` | Month-day to start showing. It stays up through Christmas Day and shows nothing the rest of the year, so it can stay enabled all year. |
 | `animation_fps` | `6` | Animation steps per second in normal rotation. |
 | `vegas_animation_hz` | `1` | Animation steps per second while it scrolls in Vegas mode. See below. |
